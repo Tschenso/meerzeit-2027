@@ -1,0 +1,19 @@
+# Persönliche Betriebsdokumentation und lokale Rückfallstände
+/rueckfall-*/
+/*.lokal.*
+/dashboard-vorschau.png
+
+# Temporäre Dateien und Laufzeitreste
+/work-*
+*.log
+*.pid
+node_modules/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Zugangsdaten und private Schlüssel
+.env
+.env.*
+*.pem
+*.key

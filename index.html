@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="AIDA und Mein Schiff 2027: Reisen, Rundreisen und Kombinationen mit Kabinenpreisen vergleichen. Nach Reederei, Schiff, Häfen und Reisezeit filtern.">
+  <title>MEERZEIT 2027 · AIDA & Mein Schiff</title>
+  <link rel="stylesheet" href="dashboard.css">
+  <script src="data.js" defer></script>
+  <script src="mein-schiff.js" defer></script>
+  <script src="kombinationen.js" defer></script>
+  <script src="kalender.js" defer></script>
+  <script src="dashboard.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#results-title">Zu den Reisen springen</a>
+  <header class="masthead"><div class="shell masthead-inner">
+    <a href="#" class="brand" aria-label="Reiseplaner Start"><span class="brand-mark" aria-hidden="true">↗</span><span>MEERZEIT <small>DEIN KREUZFAHRT-REISEPLANER</small></span></a>
+    <span class="year-label">REISEJAHR <strong>2027</strong></span>
+  </div></header>
+  <main class="shell">
+    <section class="intro" aria-labelledby="page-title">
+      <div><p class="eyebrow">DEIN NÄCHSTES KAPITEL AUF SEE</p><h1 id="page-title">Ein Jahr. <span>Viele Horizonte.</span></h1><p class="lead">AIDA & Mein Schiff 2027 entdecken. Eure Reise finden, Kabinenpreise vergleichen.</p></div>
+      <div class="snapshot"><span class="status-dot" aria-hidden="true"></span><div><strong>Preis-Momentaufnahme</strong><span id="price-date">Preisstand wird geladen …</span></div></div>
+    </section>
+    <nav class="view-switch" aria-label="Ansicht wählen"><button type="button" data-view="list" aria-pressed="true">Reisen & Preise</button><button type="button" data-view="calendar" aria-pressed="false">▦ Jahreskalender 2027</button></nav>
+    <nav class="direction" aria-label="Reisebereich">
+      <button type="button" data-scope="all" aria-pressed="true"><span class="scope-icon" aria-hidden="true">⌕</span><span><strong>Alle erfassten Reisen</strong><small><span data-scope-count="all">690</span> Reisevarianten</small></span><span class="scope-arrow" aria-hidden="true">→</span></button>
+      <button type="button" data-scope="hamburg" aria-pressed="false"><span class="scope-icon" aria-hidden="true">↗</span><span><strong>Ab Hamburg</strong><small><span data-scope-count="hamburg">173</span> Reisevarianten</small></span><span class="scope-arrow" aria-hidden="true">→</span></button>
+      <button type="button" data-scope="roundtrip" aria-pressed="false"><span class="scope-icon" aria-hidden="true">↺</span><span><strong>Rundreisen & Kombis</strong><small><span data-scope-count="roundtrip">160</span> Rundreisen ab/bis Hamburg</small></span><span class="scope-arrow" aria-hidden="true">→</span></button>
+      <button type="button" data-scope="incoming" aria-pressed="false"><span class="scope-icon" aria-hidden="true">↙</span><span><strong>Zurück nach Deutschland</strong><small><span data-scope-count="incoming">6</span> nach Hamburg / Kiel</small></span><span class="scope-arrow" aria-hidden="true">→</span></button>
+      <button type="button" data-scope="atlantic" aria-pressed="false"><span class="scope-icon" aria-hidden="true">≈</span><span><strong>Transatlantik</strong><small><span data-scope-count="atlantic">18</span> Europa ↔ Amerika</small></span><span class="scope-arrow" aria-hidden="true">→</span></button>
+    </nav>
+    <div class="scope-context"><p id="scope-description">Alle erfassten Reisen mit Abreise im Jahr 2027.</p><a href="#results-title" class="text-button">Reisen ansehen ↓</a></div>
+    <nav id="roundtrip-nav" class="roundtrip-nav" aria-label="Art der Rundreise" hidden>
+      <button type="button" data-roundtrip-type="featured" aria-pressed="true">Große Rundreisen <span>5</span></button>
+      <button type="button" data-roundtrip-type="all" aria-pressed="false">Alle Rundreisen <span>160</span></button>
+      <button type="button" data-roundtrip-type="combined" aria-pressed="false">Kombinationen <span>5</span></button>
+    </nav>
+    <div id="combination-notice" class="combination-notice" hidden><strong>Σ Berechnete Kreuzfahrten-Summen</strong><p>Die Teilreisen werden getrennt gebucht. Bei Zwischenaufenthalten kommen Unterkunft, Verpflegung und Transfers zusätzlich hinzu. Fehlt ein Teilpreis, bleibt die Summe offen.</p></div>
+    <section class="filter-panel" aria-label="Reisefilter">
+      <div class="primary-filters">
+        <label class="search-field">Reise suchen<input id="search" type="search" placeholder="z. B. Mein Schiff Norwegen Juli" aria-describedby="search-help" autocomplete="off"></label>
+        <label>Reederei<select id="operator"><option value="">AIDA & Mein Schiff</option><option value="AIDA">AIDA</option><option value="Mein Schiff">Mein Schiff</option></select></label>
+        <label>Schiff<select id="ship-select"><option value="">Alle Schiffe</option></select></label>
+        <label>Welche Kabine?<select id="cabin"></select></label>
+      </div>
+      <p id="search-help" class="search-help">Alle Suchwörter müssen passen. Suche nach Route, Reederei, Schiff, Start-/Zielhafen, Fahrtgebiet oder Abreisemonat.</p>
+      <div class="port-filters"><label>Starthafen<select id="startPort"><option value="">Alle Häfen</option></select></label><span class="port-arrow" aria-hidden="true">→</span><label>Zielhafen<select id="endPort"><option value="">Alle Häfen</option></select></label><div class="quick-choices"><span>Schnellauswahl</span><button type="button" data-quick="hamburg-round">Hamburg ↺ Hamburg</button><button type="button" data-quick="mein-schiff">Mein Schiff 2027</button><button type="button" data-quick="all">Alles anzeigen</button></div></div>
+      <div class="filter-disclosures">
+        <details class="advanced-filters" id="advanced-filters"><summary>Weitere Filter <span id="advanced-count"></span></summary>
+          <div class="date-filters"><label>Abreise frühestens<input id="dateFrom" type="date" min="2027-01-01" max="2027-12-31" aria-describedby="date-error"></label><label>Abreise spätestens<input id="dateTo" type="date" min="2027-01-01" max="2027-12-31" aria-describedby="date-error"></label></div><p id="date-error" class="date-error" role="status" hidden>Der Beginn des Abreisezeitraums liegt nach seinem Ende. Bitte ein Datum anpassen.</p>
+          <div class="filters">
+            <label>Route<select id="route"><option value="">Alle Routen</option></select></label>
+            <label>Tarif<select id="tariff"><option value="BASE">Günstigster Basistarif / Anbieterpreis</option><option value="PREMIUM">PREMIUM</option><option value="CLASSIC">CLASSIC</option><option value="PREMIUM ALL IN">PREMIUM ALL IN</option><option value="CLASSIC ALL IN">CLASSIC ALL IN</option><option value="COMFORT ALL IN">COMFORT ALL IN</option><option value="ALL">Alle Tarife</option><option value="CHARTER">Chartertarif</option></select></label>
+            <label>Reisedauer<select id="duration"><option value="">Alle Längen</option><option value="short">Bis 7 Nächte</option><option value="medium">8–14 Nächte</option><option value="long">15–28 Nächte</option><option value="extended">Ab 29 Nächten</option></select></label>
+            <label>Budget Kreuzfahrten pro Person<input id="budget" type="number" min="0" step="50" placeholder="Kein Limit" inputmode="numeric"></label>
+            <label id="atlantic-type-field" hidden>Art der Atlantikreise<select id="atlantic-type"><option value="oneway">Einfache Überquerung</option><option value="roundtrip">Rundreisen mit Hin- und Rücküberquerung</option><option value="world">Weltreise mit Atlantikpassage</option><option value="all">Alle einschließlich Rund- und Weltreisen</option></select></label>
+          </div>
+          <div class="filter-bottom"><label class="check"><input id="flights" type="checkbox"> Angebote inklusive Flug einbeziehen</label><label class="check"><input id="priced-only" type="checkbox"> Nur Reisen mit passendem Kabinenpreis</label></div>
+        </details>
+        <details class="year-section" id="month-picker"><summary>Reisemonat <span id="selected-month">Ganzes Jahr</span></summary>
+          <div class="section-line"><p>Abreise im Jahr 2027</p><button type="button" id="all-months" class="text-button">Ganzes Jahr</button></div>
+          <div class="months" id="months"></div><p class="muted small month-note">Reisevarianten je Abfahrtsmonat. Ab-Preis für deine Kabinen- und Tarifauswahl.</p>
+        </details>
+      </div>
+      <div class="active-filter-line"><div id="active-filters" class="active-filters" aria-label="Aktive Filter"></div><button type="button" id="reset" class="text-button">Zurücksetzen</button></div>
+    </section>
+    <nav class="ship-nav" id="ship-nav" aria-label="Schiff schnell auswählen"></nav>
+    <section id="kalender" class="results-section" aria-labelledby="results-title">
+      <div class="results-heading">
+        <div><p class="eyebrow" id="results-eyebrow">AB HAMBURG</p><h2 id="results-title" tabindex="-1"><span id="result-count">…</span> <span id="result-label">passende Reisen</span></h2><p class="muted" id="coverage" aria-live="polite"></p></div>
+        <div class="result-actions"><label>Preis anzeigen<select id="display"><option value="person">Pro Person</option><option value="cabin">Kabine für 2 Erwachsene</option><option value="night">Pro Person / Bordnacht</option></select></label><label id="sort-field">Sortieren nach<select id="sort"><option value="date">Abreisedatum</option><option value="price">Günstigstem Kabinenpreis</option><option value="night">Preis pro Bordnacht</option><option value="duration">Kürzester Reisedauer</option></select></label><button type="button" id="export" class="secondary-button" aria-label="Gefilterte Reisen und alle passenden Tarife als CSV herunterladen">↓ CSV</button></div>
+      </div>
+      <section id="calendar-panel" aria-label="Jahreskalender der Abfahrten" hidden></section>
+      <div id="list-panel">
+      <div class="price-key"><span id="basis-label"></span><label class="check mobile-compare"><input id="compare-mobile" type="checkbox"> Alle Kabinen vergleichen</label></div>
+      <div class="notice"><span aria-hidden="true">ⓘ</span><p>Ab-Preise bei <strong>2 Erwachsenen</strong>. Flugpakete sind markiert. „—“ bedeutet: kein Preis erfasst. Buchbarkeit und aktuellen Endpreis beim Anbieter prüfen.</p></div>
+      <div class="table-wrap"><table class="journeys"><caption class="sr-only">Reisen mit Zeitraum, Schiff, Gesamtdauer in Nächten und Ab-Preisen je Kabinenart</caption><thead><tr><th scope="col">Reisezeitraum</th><th scope="col">Schiff & Route</th><th scope="col">Gesamt<br><small>Nächte</small></th><th scope="col">Innen</th><th scope="col">Meerblick</th><th scope="col">Balkon / Veranda</th><th scope="col">Junior-Suite</th><th scope="col">Suite /<br>Kategorie*</th><th scope="col"><span class="sr-only">Kabinen und Preise</span></th></tr></thead><tbody id="journeys-body"></tbody></table></div>
+      <p class="suite-note">* Mein Schiff: „Suite“ ist in der Quelle eine Anbietergruppe, die auch Junior-Suiten enthalten kann. Diese Preise werden getrennt von eindeutig bestimmten Suiten und Junior-Suiten gekennzeichnet.</p>
+      <div id="empty-state" class="empty-state" hidden><span aria-hidden="true">⌕</span><h3>Für diese Auswahl gibt es keine Reise.</h3><p>Entferne einen Filter oder starte im gewählten Reisebereich neu.</p><button type="button" class="primary-button" id="empty-reset">Filter zurücksetzen</button></div>
+      <div class="pagination"><span id="page-label" class="muted" aria-live="polite"></span><div><button type="button" id="prev" class="secondary-button">← Zurück</button><button type="button" id="next" class="secondary-button">Weiter →</button></div></div>
+      </div>
+    </section>
+    <details class="method"><summary>Preisgrundlage, Quellen und Grenzen</summary><div><p>Die Übersicht umfasst die bisher erfassten 191 AIDA-Reisevarianten ab Hamburg, aus dem Ausland nach Hamburg oder Kiel und über den Atlantik sowie 499 Mein-Schiff-Reisevarianten weltweit aus der Jahresübersicht von mykreuzfahrt. Alle beginnen im Kalenderjahr 2027; das Reiseende kann in 2028 liegen. Kombireisen und Teilstrecken bleiben eigene Angebote und sind keine zusätzlichen Schiffsabfahrten. Eine Reise kann in mehreren Bereichen erscheinen.</p><p>Transatlantik umfasst hier eine Überquerung zwischen Europa und Amerika, einschließlich Kanaren- und Grönlandrouten. Küstenreisen zwischen Europa, den Kanaren und Afrika zählen dazu nicht. Rundreisen mit Hin- und Rücküberquerung und die Weltreise sind im Zusatzfilter getrennt auswählbar. Eine vollständige tagesaktuelle Katalogabdeckung kann nicht zugesichert werden.</p><p>Der Bereich „Rundreisen & Kombis“ enthält ausschließlich Reisen mit Hamburg als Start und Ziel. Die fünf großen AIDA-Rundreisen sowie Mein-Schiff-Rundreisen ab 15 Nächten sind zusätzlich hervorgehoben. Fünf berechnete Kombinationen verwenden zwei einzeln angebotene Kreuzfahrten. Zwei dafür benötigte Rückreisen beginnen 2028 und erscheinen nur innerhalb dieser Kombinationen.</p><p>Berechnete Kombinationen: Pro Kabinengruppe werden die passenden Teilpreise ohne Flug addiert und als Orientierungssumme gekennzeichnet. Die Einzelpreise, ihre konkreten Kabinenarten, Tarife und Quellen stehen in den Details. Eine solche Summe ist kein gemeinsam buchbares Pauschalangebot und keine Zusage einer durchgehend gleichen Kabine. Bei längerem Zwischenaufenthalt fehlen Unterkunft, Verpflegung und Transfers; ein vollständiger Reisepreis bleibt offen. Der Preis pro Bordnacht verwendet nur die Nächte auf den Schiffen. Ohne einen passenden Preis auf beiden Teilreisen wird keine vollständige Summe angezeigt.</p><p>Basistarife: bei AIDA der günstigste erfasste Preis aus PREMIUM, CLASSIC und ausdrücklich benannten Charter- oder Anbieterangeboten ohne zusätzliches All-Inclusive-Paket. Mein Schiff hat ein eigenes All-Inclusive-Bordkonzept; der Jahresquelle lässt sich kein konkreter PRO-, PLUS- oder PUR-Tarif entnehmen. Diese Preise heißen „Angebot · Tarif prüfen“ und werden nicht als AIDA-Grundtarif ausgegeben. Ein günstigerer Tarif kann andere Leistungen und Buchungsbedingungen haben. Die Quellen und der konkrete Tarif stehen bei jedem Preis in den Details.</p><p>Fehlende Preise erlauben keine Aussage darüber, ob eine Kabine ausgebucht ist. Nur ausdrücklich als ausgebucht gekennzeichnete Charterkabinen werden so angezeigt. Historische Preise ausgebuchter Kabinen fließen nicht in die Ab-Preise ein.</p><p>Bei vielen Transatlantikreisen bietet die Hauptquelle ausschließlich ein Flugpaket an. Separat erfasste Kreuzfahrtpreise eines zweiten Anbieters sind als „Angebot · Tarif prüfen“ gekennzeichnet. Beim Aktivieren von Flugpaketen können Preise mit Anreise einbezogen werden; diese bleiben im Ergebnis markiert.</p><p>Eine kombinierte Ostrock-Reise hat keinen veröffentlichten Gesamtpreis. Für diese Charterkombination wird weiterhin keine Summe gebildet. Eindeutig bestimmte Junior-Suiten werden nicht als reguläre Suiten ausgegeben. Die Mein-Schiff-Anbietergruppe „Suite“ kann Junior-Suiten enthalten; sie erscheint in der letzten Preisspalte ausdrücklich als „Suitenkategorie (Anbietergruppe)“. Im Kabinenfilter lässt sie sich separat wählen. Die Spalte Junior-Suite bleibt dafür offen. Die Balkon-/Verandaspalte zeigt den günstigsten erfassten Typ der Gruppe; Komfort-, Deluxe- und Panorama-Kabinen sind in den Details einzeln aufgeführt.</p><p>Hauptquellen: <a href="https://euresa-reisen.de/reisesuche" target="_blank" rel="noopener noreferrer">EURESA Reisen</a>, <a href="https://www.mykreuzfahrt.de/" target="_blank" rel="noopener noreferrer">mykreuzfahrt</a>, <a href="https://www.polster-pohl.de/ostrock-festival-kreuzfahrt-suedengland/" target="_blank" rel="noopener noreferrer">Polster & Pohl</a> und die beim jeweiligen Angebot verlinkten Veranstalter. Maßgeblich ist der Preis im Buchungsschritt beim Anbieter.</p><p>Der Jahreskalender fasst Reisevarianten desselben Schiffs mit gleichem Startdatum und Starthafen zu einem Abfahrtstermin zusammen. Die zwölf Monatskalender zeigen die Termine im aktuell gefilterten Bestand. Im Detail stehen Schiffe, Start-/Zielhäfen, Zeiträume und Preise. Bei berechneten Kombinationen zählt nur der Start mit dem ersten Schiff; weitere Teilabfahrten stehen im Reiseplan. Abfahrtsuhrzeiten sind nicht erfasst.</p><p>Alle Reisen beginnen 2027; die beiden Datumsfelder filtern das Abreisedatum einschließlich der Grenzen. Suchwörter werden mit UND verknüpft und berücksichtigen den Abreisemonat. Hafenfilter beziehen sich auf Ein- und Ausschiffung, nicht auf Zwischenstopps. Abweichende Schreibweisen und Angebotsvarianten der Quellen bleiben erkennbar. Die AIDA-Auswahl ist keine weltweite Jahresliste; für Mein Schiff sind alle 499 zum Abrufzeitpunkt in der Jahresquelle gelisteten Varianten enthalten. Eine vollständige Reederei-Katalogabdeckung ist damit nicht zugesichert.</p><p>Die Datei arbeitet lokal mit den eingebetteten Daten. Filter lösen keine neuen Preisabfragen aus. Eine erneute Preisprüfung erfolgt über die Angebotslinks.</p></div></details>
+    <footer><span>MEERZEIT · AIDA & MEIN SCHIFF 2027</span><span>Unabhängige Reiseübersicht · Kein offizielles Reederei-Angebot</span></footer>
+  </main>
+  <dialog id="trip-dialog" aria-labelledby="dialog-title"><div class="dialog-top"><div><p class="eyebrow" id="dialog-ship"></p><h2 id="dialog-title"></h2><p id="dialog-dates"></p></div><button type="button" id="close-dialog" class="close-button" aria-label="Details schließen">×</button></div><div id="dialog-content"></div></dialog>
+  <noscript><p class="shell">Für die Filter und Preisübersicht muss JavaScript im Browser aktiviert sein.</p></noscript>
+</body>
+</html>
