@@ -366,7 +366,7 @@
   }
   function initHistory(t){
     historyTrip=t;const select=$('history-series');if(!select)return;
-    const selected=bestOffer(t,state)||bestOffer(t,state,'@any');
+    const selected=bestOffer(t,state)||bestOffer(t,state,'@any')||bestOffer(t,{...state,tariff:'ALL',flights:true})||bestOffer(t,{...state,tariff:'ALL',flights:true},'@any');
     let index=selected?(t.priceHistory||[]).findIndex(s=>s.cabin===selected.cabin&&s.tariff===selected.tariff&&s.flight===selected.flight&&new URL(s.sourceUrl).hostname===new URL(t.sources[selected.source].url).hostname):-1;
     if(index<0)index=(t.priceHistory||[]).findIndex(s=>cabinMatches(s.cabin,state.cabin)&&(!s.flight||state.flights)&&historyStats(s).last);
     if(index<0)index=0;

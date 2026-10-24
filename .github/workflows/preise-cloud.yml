@@ -1,6 +1,14 @@
 name: Preise in der Cloud aktualisieren
 on:
+  schedule:
+    - cron: '0 9 * * 1'
+      timezone: Europe/Berlin
   workflow_dispatch:
+    inputs:
+      nur_pruefen:
+        description: Nur einen begrenzten Abruf testen, ohne Preise zu speichern
+        type: boolean
+        default: false
 permissions:
   contents: read
 concurrency:
@@ -9,23 +17,50 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 45
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '22'
-      - name: AIDA-Cloudquelle ohne Speicherung prüfen
-        run: node scripts/preise-aktualisieren.cjs --source=euresa --operator=aida --dry-run --limit=1
-      - name: EURESA-Mein-Schiff-Angebot ohne Speicherung prüfen
+      - name: Preisquellen ohne Datenänderung prüfen
+        if: inputs.nur_pruefen
+        run: node scripts/preise-aktualisieren.cjs --source=euresa --dry-run --limit=1
+      - name: Aktuelle Kabinenpreise und Preisverläufe abrufen
+        if: ${{ !inputs.nur_pruefen }}
+        run: node scripts/preise-aktualisieren.cjs --source=euresa
+      - name: Daten und Preisverlauf prüfen
+        run: |
+          node pruefen.cjs
+          node scripts/preise-pruefen.cjs
+      - name: Geprüfte Preisstände versionieren
+        if: ${{ !inputs.nur_pruefen }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- data.js mein-schiff.js
+          if ! git diff --cached --quiet; then
+            git commit -m 'Update cruise prices and price history from cloud'
+            git push origin HEAD:main
+          fi
+      - name: Abrufbericht
+        if: ${{ !inputs.nur_pruefen }}
         run: |
           node - <<'NODE'
-          const p=require('./scripts/preise-aktualisieren.cjs');
-          (async()=>{
-            const trip={...p.readData('mein-schiff.js','MEINSCHIFF2027').trips.find(t=>t.id==='MS-2012349'),euresaCode:'MSA270102SEE'};
-            const r=await fetch('https://euresa-reisen.de/reisesuche/MSA270102SEE?priceView=pax',{signal:AbortSignal.timeout(30000),headers:{'User-Agent':'Meerzeit2027/1.0 (public cruise price comparison)','Accept-Language':'de-DE'}});
-            if(!r.ok)throw Error('HTTP '+r.status);
-            const offers=p.parseEuresa(await r.text(),trip);
-            console.log(JSON.stringify({operator:trip.operator,ship:trip.ship,start:trip.start,verifiedOffers:offers.length}));
-          })().catch(e=>{console.error(e.message);process.exitCode=1});
+          const fs=require('node:fs'),p=require('./scripts/preise-aktualisieren.cjs');
+          let report='## Preisaktualisierung\n\nReederei | Bestätigt | Abruffehler | Manuell zu prüfen\n--- | ---: | ---: | ---:\n';
+          for(const [file,key,name] of [['data.js','AIDA2027','AIDA'],['mein-schiff.js','MEINSCHIFF2027','Mein Schiff']]){
+            const r=p.readData(file,key).lastUpdate;report+=`${name} | ${r.ok} | ${r.errors} | ${r.manual}\n`;
+          }
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,report+'\n[Öffentliches Dashboard](https://tschenso.github.io/meerzeit-2027/)\n');
           NODE
+  publish:
+    needs: update
+    if: ${{ !inputs.nur_pruefen }}
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/pages.yml

@@ -45,6 +45,11 @@ assert.throws(()=>p.parseEuresa(msHtml.replace('101-270101-7','101-270102-7'),ms
 assert.throws(()=>p.parseEuresa(msHtml.replace('&quot;adults&quot;:2','&quot;adults&quot;:1'),msTrip),/Häfen oder Belegung/);
 const historicMs={offers:[{...msOffer,source:0}],sources:[{url:'https://example.org/alter-anbieter',checkedAt:'2026-10-23T12:00:00Z'},{url:'https://example.org/neuer-anbieter',checkedAt:'2026-10-24T12:00:00Z'}]};
 p.seed(historicMs);p.replaceSource(historicMs,1,[msOffer],'2026-10-24T12:00:00Z');assert.equal(historicMs.priceHistory.length,2,'Ein Anbieterwechsel beginnt eine eigene Preisreihe');
+const inventory=require('./mein-schiff-euresa.cjs');
+const listing='<div wire:key="cruise-panel-cruises-123"><div>7 Nächte mit Mein Schiff 1</div><span>01.01.2027 bis 08.01.2027</span><a href="/reisesuche/MSCODE?priceView=pax">Details</a></div><span wire:key="paginator-page-page50">50</span>';
+assert.equal(inventory.parseInventory(listing).pages,50,'Die aktuell gewählte letzte Katalogseite muss mitzählen');
+assert.deepEqual(inventory.parseInventory(listing).rows[0],{code:'MSCODE',ship:'Mein Schiff 1',nights:7,start:'2027-01-01',end:'2027-01-08'});
+assert.throws(()=>inventory.parseInventory(listing.replace('bis 08.01.2027','bis unbekannt')),/Unvollständige/);
 let series=0,points=0;
 for(const [file,global] of [['data.js','AIDA2027'],['mein-schiff.js','MEINSCHIFF2027']]){
   const d=p.readData(file,global);

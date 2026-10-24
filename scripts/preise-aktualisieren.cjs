@@ -151,7 +151,30 @@ async function main(args=process.argv.slice(2)){
       }catch(error){annualError=error.message;}
     }
     for(const trip of all){
+      let newlyConfirmed=-1;
+      if(op==='mein-schiff'&&trip.euresaCandidate&&count<limit){
+        const candidate=trip.euresaCandidate;count++;
+        try{
+          const url=new URL(candidate.url);
+          if(url.origin!=='https://euresa-reisen.de'||url.pathname!=='/reisesuche/'+candidate.code)throw Error('Unerwartetes Ziel für Quellenzuordnung');
+          const offers=parseMeinSchiffEuresa((await get(url.href)).html,{...trip,euresaCode:candidate.code});
+          const checkedAt=new Date().toISOString();trip.euresaCode=candidate.code;
+          newlyConfirmed=trip.sources.length;trip.sources.push({label:'EURESA Reisen · Mein Schiff',url:url.href,checkedAt});
+          replaceSource(trip,newlyConfirmed,offers,checkedAt);report.ok++;
+          for(let i=0;i<newlyConfirmed;i++)if(new URL(trip.sources[i].url).hostname==='www.mykreuzfahrt.de'){
+            trip.sources[i].updateStatus='archived';trip.sources[i].updateError='Historische Preisquelle; aktuelle Angebote stammen von EURESA';trip.offers.filter(o=>o.source===i).forEach(o=>{o.stale=true;});
+          }
+          trip.bookingUrl=url.href;
+          trip.note='Aktuelle EURESA-Kabinenpreise mit benanntem Mein-Schiff-PRO-, PLUS- oder PUR-Tarif. Erforderliche Flugpakete sind gekennzeichnet. Frühere mykreuzfahrt-Angebote bleiben mit ihrer eigenen Kabinen-, Tarif- und Quellenzuordnung im Verlauf erhalten; die frühere Anbietergruppe Suite kann Junior-Suiten enthalten.';
+          delete trip.euresaCandidate;
+        }catch(error){
+          if(/HTTP (403|429)/.test(error.message))throw error;
+          candidate.updateError=error.message;candidate.attemptedAt=at;report.errors++;console.error(trip.id+': '+error.message);
+        }
+        await new Promise(resolve=>setTimeout(resolve,200));
+      }
       for(let index=0;index<trip.sources.length;index++){
+        if(index===newlyConfirmed)continue;
         const source=trip.sources[index],host=new URL(source.url).hostname;
         if(source.updateStatus==='archived'){report.archived=(report.archived||0)+1;continue;}
         if(euresaOnly&&host!=='euresa-reisen.de'){failSource(trip,index,'Kein automatischer Cloud-Abruf für diese Quelle; letzter bestätigter Stand bleibt historisch',at,'manual');report.manual++;continue;}
@@ -169,11 +192,12 @@ async function main(args=process.argv.slice(2)){
           else if(host==='www.mykreuzfahrt.de')offers=parseMykDetail((await get(source.url)).html,trip);
           else{failSource(trip,index,'Manuelle Prüfung beim Veranstalter erforderlich',at,'manual');report.manual++;continue;}
           replaceSource(trip,index,offers,new Date().toISOString());report.ok++;
-        }catch(error){failSource(trip,index,error.message,at);report.errors++;console.error(trip.id+': '+error.message);}
+        }catch(error){if(host==='euresa-reisen.de'&&/HTTP (403|429)/.test(error.message))throw error;failSource(trip,index,error.message,at);report.errors++;console.error(trip.id+': '+error.message);}
         if(host==='euresa-reisen.de'||(op==='aida'&&host==='www.mykreuzfahrt.de'))await new Promise(resolve=>setTimeout(resolve,200));
       }
       if(count&&count%25===0)console.log(op+': '+report.ok+' Quellen aktualisiert');
     }
+    if(op==='mein-schiff'&&data.euresaInventory)data.euresaInventory.confirmedCount=all.filter(t=>t.euresaCode&&t.sources.some(s=>new URL(s.url).hostname==='euresa-reisen.de'&&s.updateStatus==='ok')).length;
     data.lastUpdate=report;
     if(!report.ok)throw Error(op+': Kein erfolgreicher Preisabruf; bestehende Dateien werden erhalten.');
     // generatedAt bleibt der Katalogstand; einzelne Quellen tragen den Preisabruf.
