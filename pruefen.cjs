@@ -78,6 +78,10 @@ const luna64=comboById('COMBO-LU-64'),mar65=comboById('COMBO-MA-65'),winter=comb
 assert.deepEqual([luna64.nights,luna64.cruiseNights,luna64.stayNights],[64,64,0]);
 assert.deepEqual([mar65.start,mar65.end,mar65.nights],['2027-11-05','2028-01-09',65]);
 assert.deepEqual([winter.nights,winter.cruiseNights,winter.stayNights],[148,48,100]);
+const durationSample=[winter,luna64,byId('LU07270524')],durationOriginal=durationSample.map(t=>t.id);
+assert.deepEqual(core.sortTrips(durationSample,{...base,sort:'duration'}).map(t=>t.nights),[7,64,148]);
+assert.deepEqual(core.sortTrips(durationSample,{...base,sort:'duration-desc'}).map(t=>t.nights),[148,64,7],'Dauersortierung berücksichtigt den gesamten Reisezeitraum einschließlich Zwischenaufenthalt.');
+assert.deepEqual(durationSample.map(t=>t.id),durationOriginal,'Sortieren darf den Katalog nicht umordnen.');
 assert.deepEqual([comboById('COMBO-PR27-BE20').cruiseNights,comboById('COMBO-PR27-BE20').stayNights],[47,101]);
 assert.equal(comboById('COMBO-PR34-BE28').stayNights,86);
 // Preisregressionen verwenden feste Angebote; Live-Preise dürfen sich ändern.

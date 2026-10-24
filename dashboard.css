@@ -96,7 +96,7 @@ dialog::backdrop{background:#102d4277;backdrop-filter:blur(3px)}.dialog-top{disp
  .journeys,.journeys tbody{display:block}.journeys thead{position:absolute;width:1px;height:1px;clip:rect(0,0,0,0);overflow:hidden}
  .journeys tbody{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.journeys tr{display:grid;grid-template-columns:minmax(0,1fr) auto;align-content:start;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:19px;overflow:hidden}
  .journeys td{border:0;padding:0}.journeys .date-cell{grid-row:1;grid-column:1;padding-bottom:16px;font-size:.82rem}.date-start,.date-end{display:inline}.date-end{margin-left:5px;font-size:.75rem}
- .journeys .nights-cell{grid-row:1;grid-column:2;background:#edf3f5;align-self:start;border-radius:5px;padding:4px 7px;font-size:.71rem;white-space:nowrap}.nights-cell:after{content:" Nächte"}
+ .journeys .nights-cell{grid-row:1;grid-column:2;background:#edf3f5;align-self:start;border-radius:5px;padding:4px 7px;font-size:.71rem;white-space:nowrap}
  .journeys .route-cell{grid-row:2;grid-column:1/-1;max-width:none;min-width:0}.ship-label{font-size:.75rem;margin-bottom:5px}.route-name{font-size:1.02rem}.end-port{font-size:.77rem}
  .journeys .cabin-price{display:none}.journeys .detail-cell{grid-column:1/-1;margin-top:15px}.detail-button{width:100%;text-align:center;min-height:44px}
  .mobile-price{display:block;text-align:left;background:transparent;color:var(--ink);padding:16px 0 0;margin-top:15px;border-top:1px solid var(--line);width:100%}.mobile-price>span{display:block;color:var(--muted);font-size:.72rem}.mobile-price strong{display:block;font-weight:650;font-size:1.65rem;letter-spacing:-.035em;line-height:1.3;margin-top:2px;font-variant-numeric:tabular-nums}
@@ -151,7 +151,7 @@ dialog::backdrop{background:#102d4277;backdrop-filter:blur(3px)}.dialog-top{disp
 .combo-plan-heading{margin-top:25px;font-size:1rem}
 @media(max-width:1300px){.direction .scope-icon{display:none}.direction button{gap:0;padding:13px}.direction small{font-size:.68rem}}
 @media(max-width:1000px){.direction{grid-template-columns:repeat(2,minmax(0,1fr))}.direction button{min-height:70px}.direction .scope-icon{display:grid;margin-right:12px}}
-@media(max-width:1100px){.nights-cell:after{content:none}.night-count:after{content:" Nächte"}.journeys .nights-cell{max-width:126px;white-space:normal}.duration-breakdown{font-size:.62rem;max-width:115px}.journey-breakdown{font-size:.75rem}}
+@media(max-width:1100px){.nights-cell:after{content:none}.journeys .nights-cell{max-width:126px;white-space:normal}.duration-breakdown{font-size:.62rem;max-width:115px}.journey-breakdown{font-size:.75rem}}
 @media(max-width:600px){
  .direction .scope-icon{display:none}.direction button{min-height:53px}.direction strong{font-size:.8rem}
  .roundtrip-nav{display:grid;grid-template-columns:1fr;gap:6px;margin-bottom:14px}.roundtrip-nav button{justify-content:space-between;min-height:44px;font-size:.8rem;padding:9px 12px}
@@ -171,7 +171,7 @@ dialog::backdrop{background:#102d4277;backdrop-filter:blur(3px)}.dialog-top{disp
 
 /* Gemeinsame Suche für AIDA und Mein Schiff */
 .direction{grid-template-columns:repeat(5,minmax(0,1fr))}
-.primary-filters{grid-template-columns:1.6fr .9fr 1fr 1.05fr}
+.primary-filters{grid-template-columns:1.6fr .9fr 1fr 1.05fr .95fr}
 .search-help,.suite-note{color:var(--muted);font-size:.72rem;line-height:1.6;margin-top:10px}
 .port-filters{display:grid;grid-template-columns:1fr 24px 1fr 1.7fr;gap:14px;align-items:end;margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}
 .port-arrow{align-self:end;min-height:44px;display:grid;place-items:center;color:var(--muted)}
@@ -184,9 +184,9 @@ dialog::backdrop{background:#102d4277;backdrop-filter:blur(3px)}.dialog-top{disp
 .booking-link{margin-bottom:16px}.booking-link a{display:inline-block;text-decoration:none;min-height:44px}
 .suite-note{padding:0 2px;max-width:1100px}.snapshot{max-width:340px}.snapshot #price-date{font-size:.7rem;line-height:1.7}
 .ship-nav{max-height:112px;overflow-y:auto}
-@media(max-width:1200px){.direction{grid-template-columns:repeat(3,minmax(0,1fr))}.primary-filters{grid-template-columns:1.4fr 1fr}.primary-filters .search-field{grid-column:auto}.port-filters{grid-template-columns:1fr 24px 1fr}.quick-choices{grid-column:1/-1}.quick-choices>span{width:auto;margin-right:8px}.snapshot{max-width:290px}}
+@media(max-width:1200px){.direction{grid-template-columns:repeat(3,minmax(0,1fr))}.primary-filters{grid-template-columns:1.4fr 1fr}.primary-filters .search-field{grid-column:1/-1}.port-filters{grid-template-columns:1fr 24px 1fr}.quick-choices{grid-column:1/-1}.quick-choices>span{width:auto;margin-right:8px}.snapshot{max-width:290px}}
 @media(max-width:700px){.direction{grid-template-columns:repeat(2,minmax(0,1fr))}.direction button:first-child{grid-column:1/-1}.intro .snapshot{max-width:none}.port-filters{gap:10px;grid-template-columns:1fr 16px 1fr}.quick-choices>span{width:100%}.date-filters{grid-template-columns:1fr 1fr}.search-help{font-size:.7rem}.suite-note{font-size:.7rem}}
-@media(max-width:600px){.primary-filters{grid-template-columns:1fr 1fr}.primary-filters .search-field{grid-column:1/-1}.primary-filters label:last-child{grid-column:1/-1}.primary-filters{gap:12px}.port-filters{margin-top:12px;padding-top:12px}.port-filters label{font-size:.72rem}.port-filters select{font-size:.78rem;padding-left:8px;padding-right:7px}.quick-choices{gap:6px}.quick-choices button{min-height:44px;padding:8px;font-size:.7rem}.date-filters{grid-template-columns:1fr}.date-filters input{width:100%;min-width:0}.snapshot #price-date{font-size:.68rem}.badge.operator{font-size:.63rem}}
+@media(max-width:600px){.primary-filters{grid-template-columns:1fr 1fr}.primary-filters .search-field{grid-column:1/-1}.primary-filters label:last-child{grid-column:auto}.primary-filters{gap:12px}.port-filters{margin-top:12px;padding-top:12px}.port-filters label{font-size:.72rem}.port-filters select{font-size:.78rem;padding-left:8px;padding-right:7px}.quick-choices{gap:6px}.quick-choices button{min-height:44px;padding:8px;font-size:.7rem}.date-filters{grid-template-columns:1fr}.date-filters input{width:100%;min-width:0}.snapshot #price-date{font-size:.68rem}.badge.operator{font-size:.63rem}}
 @media print{.search-help,.suite-note{font-size:9px}.port-filters,.quick-choices{display:none!important}}
 
 /* Jahreskalender: zwölf Monate und Abfahrtsliste */
@@ -355,3 +355,7 @@ dialog::backdrop{background:#102d4277;backdrop-filter:blur(3px)}.dialog-top{disp
  .months{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.month-choice{min-height:96px;padding:10px}.month-choice>strong{font-size:.75rem}.month-choice .month-count{font-size:1.05rem}.month-choice small{font-size:.66rem}
 }
 @media(max-width:380px){.calendar-month-nav,.months{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Reisedauer bleibt auf Desktop und Handy direkt lesbar. */
+.duration-nights{display:block;white-space:nowrap;font-weight:650}.duration-days{display:block;white-space:nowrap;color:var(--muted);font-size:.66rem;margin-top:4px}.duration-sort{display:inline-flex;align-items:center;gap:6px;min-height:44px;background:transparent;color:inherit;padding:0;font-weight:650;text-align:left}.duration-sort span{color:var(--blue)}
+@media(max-width:1100px){.duration-days{font-size:.61rem}.duration-nights{font-size:.72rem}}

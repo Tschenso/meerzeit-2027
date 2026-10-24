@@ -118,6 +118,7 @@
       if (state.sort === 'price') order = pa === pb ? 0 : pa - pb;
       if (state.sort === 'night') order = pa / priceNights(a) === pb / priceNights(b) ? 0 : pa / priceNights(a) - pb / priceNights(b);
       if (state.sort === 'duration') order = a.nights - b.nights;
+      if (state.sort === 'duration-desc') order = b.nights - a.nights;
       return order || a.start.localeCompare(b.start) || a.ship.localeCompare(b.ship) || a.nights - b.nights;
     });
   }
@@ -234,7 +235,7 @@
     const invalidDates=!!(state.dateFrom&&state.dateTo&&state.dateFrom>state.dateTo);
     $('date-error').hidden=!invalidDates;
     $('dateFrom').setAttribute('aria-invalid',String(invalidDates));$('dateTo').setAttribute('aria-invalid',String(invalidDates));
-    const advanced=chips.filter(([key])=>['dateFrom','dateTo','route','tariff','duration','budget','pricedOnly','atlanticType'].includes(key)).length;
+    const advanced=chips.filter(([key])=>['dateFrom','dateTo','route','tariff','budget','pricedOnly','atlanticType'].includes(key)).length;
     $('advanced-count').textContent=advanced?'('+advanced+')':'';
   }
   function renderShips() {
@@ -288,6 +289,10 @@
   }
   function renderRows() {
     filtered = sortTrips(filterTrips(trips,state),state);
+    const durationOrder=state.sort==='duration'?'ascending':state.sort==='duration-desc'?'descending':'none';
+    $('duration-heading').setAttribute('aria-sort',durationOrder);
+    $('duration-sort-arrow').textContent=durationOrder==='ascending'?'↑':durationOrder==='descending'?'↓':'↕';
+    $('duration-sort').setAttribute('aria-label','Nach Reisedauer sortieren, '+(durationOrder==='ascending'?'längste':'kürzeste')+' zuerst');
     const pages = Math.max(1,Math.ceil(filtered.length/pageSize));
     state.page = Math.min(state.page,pages);
     const offset = (state.page-1)*pageSize;
@@ -303,7 +308,7 @@
       const selected=bestOffer(t,state);
       const preview=selected?`<button type="button" class="mobile-price" data-detail="${escape(t.id)}" aria-label="Alle Preise, ab ${escape(money(displayPrice(selected.price,priceNights(t),state.display)))}"><span>${escape(cabinLabel)} ab</span><strong>${money(displayPrice(selected.price,priceNights(t),state.display))}</strong><small>${state.display==='cabin'?'für 2 Erwachsene':state.display==='night'?'pro Person / Bordnacht':'pro Person'} · ${escape(tariffName(selected.tariff))}${selected.calculated?' <b>Σ Kreuzfahrten</b>':''}${selected.flight?' <b>inkl. Flug</b>':''}</small></button>`:'<div class="mobile-price missing"><span>Für diese Kabinenwahl kein Preis erfasst</span></div>';
       const badges = [`<span class="badge operator ${operatorOf(t)==='Mein Schiff'?'mein-schiff':''}">${escape(operatorOf(t))}</span>`,t.atlantic?`<span class="badge atlantic">${({oneway:'Atlantiküberquerung',roundtrip:'Hin- & Rücküberquerung',world:'Weltreise'})[t.atlantic]}</span>`:'',t.charter?'<span class="badge">Charter</span>':'',t.isCombination?'<span class="badge calculated">Berechnete Kombination</span>':t.combo?'<span class="badge">Kombireise</span>':'',t.scope === 'incoming'?'<span class="badge">Transitreise</span>':'',!t.isCombination&&priceAvailability(t)?`<span class="badge warn">${escape(priceAvailability(t))}</span>`:'',!state.flights&&t.offers.some(o=>o.flight&&!o.stale&&!o.soldOut)&&!t.offers.some(o=>!o.flight&&!o.stale&&!o.soldOut)?'<button type="button" class="badge flight-reveal" data-show-flights="true">Flugpreise anzeigen +</button>':''].join('');
-      return `<tr><td class="date-cell" data-label="Reisezeitraum"><span class="date-start">${date(t.start)}</span><span class="date-end">bis ${date(t.end)}</span></td><td class="route-cell"><span class="ship-label">${escape(t.ship)}</span><span class="route-name">${escape(t.route)}</span><span class="end-port">${escape(t.startPort === t.endPort?'ab/bis '+t.startPort:t.startPort+' → '+t.endPort)}</span>${badges}${t.isCombination?`<span class="journey-breakdown">${t.cruiseNights} Nächte an Bord${t.stayNights?' + '+t.stayNights+' Nächte Aufenthalt':' · direkter Anschluss'}${t.shipNames.length>1?' · Schiffwechsel':''}</span>`:''}${preview}</td><td class="nights-cell" data-label="Nächte"><span class="night-count">${t.nights}</span>${t.isCombination?`<small class="duration-breakdown">${t.cruiseNights} Bord${t.stayNights?" + "+t.stayNights+" Aufenthalt":""}</small>`:""}</td>${GROUPS.map(([g,l])=>priceCell(t,g,l)).join('')}<td class="detail-cell"><button type="button" class="detail-button" data-detail="${escape(t.id)}">${t.isCombination?"Plan & Teilpreise →":"Kabinen & Preise →"}</button></td></tr>`;
+      return `<tr><td class="date-cell" data-label="Reisezeitraum"><span class="date-start">${date(t.start)}</span><span class="date-end">bis ${date(t.end)}</span></td><td class="route-cell"><span class="ship-label">${escape(t.ship)}</span><span class="route-name">${escape(t.route)}</span><span class="end-port">${escape(t.startPort === t.endPort?'ab/bis '+t.startPort:t.startPort+' → '+t.endPort)}</span>${badges}${t.isCombination?`<span class="journey-breakdown">${t.cruiseNights} Nächte an Bord${t.stayNights?' + '+t.stayNights+' Nächte Aufenthalt':' · direkter Anschluss'}${t.shipNames.length>1?' · Schiffwechsel':''}</span>`:''}${preview}</td><td class="nights-cell" data-label="Reisedauer"><span class="duration-nights"><span class="night-count">${t.nights}</span> Nächte</span><small class="duration-days">${t.nights+1} Kalendertage</small>${t.isCombination?`<small class="duration-breakdown">${t.cruiseNights} Bord${t.stayNights?" + "+t.stayNights+" Aufenthalt":""}</small>`:""}</td>${GROUPS.map(([g,l])=>priceCell(t,g,l)).join('')}<td class="detail-cell"><button type="button" class="detail-button" data-detail="${escape(t.id)}">${t.isCombination?"Plan & Teilpreise →":"Kabinen & Preise →"}</button></td></tr>`;
     }).join('');
     $('empty-state').hidden = !!filtered.length;
     document.querySelector('.table-wrap').hidden = !filtered.length;
@@ -399,7 +404,7 @@
     if(t.isCombination){showCombinationDetail(t);return;}
     $('dialog-ship').textContent = operatorOf(t)+' · '+t.ship + (t.charter?' · Charterreise':t.atlantic?' · '+({oneway:'Atlantiküberquerung',roundtrip:'Karibik-Rundreise',world:'Weltreise'})[t.atlantic]:t.scope==='incoming'?' · Transitreise':'');
     $('dialog-title').textContent = t.route;
-    $('dialog-dates').textContent = `${date(t.start)} – ${date(t.end)} · ${t.nights} Nächte · ${t.startPort} → ${t.endPort}`;
+    $('dialog-dates').textContent = `${date(t.start)} – ${date(t.end)} · ${t.nights} Nächte / ${t.nights+1} Kalendertage · ${t.startPort} → ${t.endPort}`;
     const isMein=operatorOf(t)==='Mein Schiff';
     const note = (t.bookingUrl?`<p class="booking-link"><a class="primary-button" href="${escape(t.bookingUrl)}" target="_blank" rel="noopener noreferrer">Reise beim Anbieter öffnen ↗</a></p>`:'')+(!isMein&&t.note?`<p class="detail-note">${escape(t.note)}</p>`:isMein?'<p class="source-note">Mein Schiff · All Inclusive. Konkreter Tarif beim Anbieter prüfen. „Suitenkategorie“ kann Junior-Suiten enthalten.</p>':'');
     const sources = t.sources.map((s,i)=>`<div>[${i+1}] <a href="${escape(s.url)}" target="_blank" rel="noopener noreferrer">${escape(s.label)}</a> · abgerufen ${escape(stamp(s.checkedAt))} Uhr${s.updateStatus==='ok'&&s.availability==='unavailable'?' · derzeit nicht buchbar':''}${s.updateStatus&&s.updateStatus!=='ok'?' · '+escape(s.updateError||'Erneut prüfen'):''}</div>`).join('');
@@ -438,6 +443,7 @@
   $('compare-mobile').addEventListener('change',()=>document.querySelector('.table-wrap').classList.toggle('compare-all',$('compare-mobile').checked));
   $('active-filters').addEventListener('click',event=>{const b=event.target.closest('[data-clear]');if(!b)return;const key=b.dataset.clear;state[key]=defaults[key];if(key==='ship')state.route='';if(key==='operator'){state.ship='';state.route='';state.startPort='';state.endPort='';state.tariff='BASE';}state.page=1;syncControls();render();});
   $('all-months').addEventListener('click',()=>{state.month='';state.page=1;render();});
+  $('duration-sort').addEventListener('click',()=>{state.sort=state.sort==='duration'?'duration-desc':'duration';state.page=1;syncControls();render();});
   for(const id of ['search','startPort','endPort','dateFrom','dateTo','route','cabin','tariff','duration','budget','display','sort']) $(id).addEventListener(id==='search'||id==='budget'?'input':'change',()=>{state[id]=$(id).value;state.page=1;render();});
   for(const [id,key] of [['flights','flights'],['priced-only','pricedOnly']])$(id).addEventListener('change',()=>{state[key]=$(id).checked;state.page=1;render();});
   $('reset').addEventListener('click',reset);$('empty-reset').addEventListener('click',reset);

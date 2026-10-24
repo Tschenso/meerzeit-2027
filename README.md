@@ -2,6 +2,8 @@
 
 Ein statisches Kreuzfahrt-Dashboard mit Suche, Kabinenpreisvergleich und Jahreskalender. Es arbeitet ohne Installation oder externe Laufzeitdienste direkt im Browser.
 
+Die Reiseübersicht zeigt die Dauer in Nächten und Kalendertagen, einschließlich Start- und Endtag. Der sichtbare Dauerfilter grenzt die Ergebnisse ein. Unter „Sortieren nach“ stehen kürzeste und längste Reise zur Wahl; ein Klick auf die Spaltenüberschrift „Reisedauer“ wechselt die Richtung. Bei Kombinationen zählt die Gesamtdauer einschließlich Zwischenaufenthalt; die Bordnächte bleiben separat erkennbar.
+
 **Öffentliche Seite:** [MEERZEIT 2027](https://tschenso.github.io/meerzeit-2027/) · [Jahreskalender](https://tschenso.github.io/meerzeit-2027/#kalender). Auch über mobile Daten erreichbar; der lokale Rechner muss dafür nicht laufen.
 
 ## Preise aktualisieren und Verlauf ansehen
