@@ -6,7 +6,7 @@ Ein statisches Kreuzfahrt-Dashboard mit Suche, Kabinenpreisvergleich und Jahresk
 
 ## Preise aktualisieren und Verlauf ansehen
 
-In den Reisedetails steht ein Preisdiagramm mit allen dokumentierten Preisständen. Kabine, Tarif, Flugpaket, Belegung und Anbieter bleiben getrennt. Der Verlauf beginnt mit den tatsächlich vorhandenen Abrufen vom 23./24. Oktober 2026. Frühere Preise werden nicht nachträglich erfunden. Bei berechneten Kombinationen öffnen die Schaltflächen unter den Teilreisen deren Preisverläufe; eine wechselnde Zusammenstellung wird nicht als durchgehend gleiches Paket dargestellt.
+In den Reisedetails steht ein Preisdiagramm mit allen dokumentierten Preisständen. Zuerst die Kabinenart, dann Tarif und Anreise wählen. Die vollständige Angebotsgrundlage steht lesbar unter der Auswahl. Kabine, Tarif, Flugpaket, Belegung und Anbieter bleiben getrennt. Der Verlauf beginnt mit den tatsächlich vorhandenen Abrufen vom 23./24. Oktober 2026. Frühere Preise werden nicht nachträglich erfunden. Bei berechneten Kombinationen öffnen die Schaltflächen unter den Teilreisen deren Preisverläufe; eine wechselnde Zusammenstellung wird nicht als durchgehend gleiches Paket dargestellt.
 
 Mit Node.js 22 oder neuer:
 
@@ -30,7 +30,7 @@ Im ursprünglichen Git-Checkout mit Node.js 22+, Git und angemeldeter GitHub CLI
 .\Aktualisieren-und-veroeffentlichen.ps1
 ```
 
-Das Skript ruft die Preise lokal ab, prüft die Daten, sichert ausschließlich die beiden Datendateien als Git-Commit und pusht nach `main`. GitHub Actions prüft und veröffentlicht die Seite anschließend automatisch. Es übernimmt keine ungesicherten Änderungen und überschreibt keinen abweichenden GitHub-Stand. `-OhnePreisabruf` veröffentlicht einen bereits geprüften lokalen Stand ohne erneuten Preisabruf. **Es ist kein automatischer Zeitplan eingerichtet.**
+Das Skript ruft die Preise lokal ab, prüft die Daten, sichert ausschließlich die beiden Datendateien als Git-Commit und pusht nach `main`. GitHub Actions prüft und veröffentlicht die Seite anschließend automatisch. Es übernimmt keine ungesicherten Änderungen und überschreibt keinen abweichenden GitHub-Stand. `-OhnePreisabruf` veröffentlicht einen bereits geprüften lokalen Stand ohne erneuten Preisabruf. Die wöchentliche Planung erfolgt durch eine lokale Codex-Automation im bestehenden Chat, nicht durch GitHub Actions. Dafür müssen der betreffende Rechner und die Codex-App laufen und der Projektordner erreichbar sein. Die manuelle Ausführung bleibt möglich; der Zeitplan ist keine im Repository enthaltene Systemeinstellung.
 
 Der Preisabruf muss lokal erfolgen: Beim geprüften Lauf vom 24. Oktober 2026 blockiert mykreuzfahrt Anfragen von GitHub-Runnern mit HTTP 403. Diese Sperre wird nicht umgangen. GitHub Pages liefert die bereits veröffentlichten Daten unabhängig vom lokalen Rechner aus. Unter [Actions → Dashboard auf GitHub Pages veröffentlichen](https://github.com/Tschenso/meerzeit-2027/actions/workflows/pages.yml) kann **Run workflow** den Repository-Stand auch ohne neue Preisabfrage erneut veröffentlichen.
 

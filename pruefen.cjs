@@ -27,7 +27,8 @@ assert.equal(core.groupOf('Suite am Bug mit privatem Sonnendeck SD'),'suite');
 assert.equal(core.bestOffer(byId('LU07270531'),base),null,'Ausgebuchte Charterpreise dürfen nicht als aktuelle Ab-Preise erscheinen.');
 assert.equal(core.bestOffer(byId('LU14270524'),base),null,'Kombinationspreise dürfen nicht aus Einzelpreisen erfunden werden.');
 assert.ok(core.eligibleOffers(byId('PR20271105'),base).every(o=>!o.flight),'Flugpakete dürfen nicht in den Standardvergleich rutschen.');
-assert.ok(core.eligibleOffers(byId('PR20271105'),{...base,flights:true}).some(o=>o.flight),'Erfasste Flugpakete müssen separat auswählbar sein.');
+const flightFixture={offers:[{cabin:'Innenkabine',tariff:'PREMIUM',price:1900,flight:true}]};
+assert.ok(core.eligibleOffers(flightFixture,{...base,flights:true}).some(o=>o.flight),'Erfasste Flugpakete müssen separat auswählbar sein.');
 const juniorFixture={offers:[{cabin:'Junior-Suite',tariff:'PREMIUM',price:1500,flight:false}]};
 assert.ok(core.bestOffer(juniorFixture,base,'@junior'));
 assert.equal(core.bestOffer(juniorFixture,base,'@suite'),null,'Eine Junior-Suite darf keine volle Suite ersetzen.');
@@ -36,7 +37,9 @@ assert.ok(jan.length&&jan.every(t=>t.scope==='hamburg'&&t.start.slice(5,7)==='01
 const incoming=core.filterTrips(trips,{...base,scope:'incoming'});
 assert.equal(incoming.length,6);
 const budget=core.filterTrips(trips,{...base,budget:'1000'});
-assert.ok(budget.length&&budget.every(t=>core.bestOffer(t,base).price<=1000));
+assert.ok(budget.every(t=>core.bestOffer(t,base).price<=1000));
+const budgetFixture=[799,1400,null].map((price,i)=>({...trips[0],id:'budget-'+i,offers:price===null?[]:[{cabin:'Innenkabine',tariff:'PREMIUM',price,flight:false}]}));
+assert.deepEqual(core.filterTrips(budgetFixture,{...base,budget:'1000'}).map(t=>t.id),['budget-0'],'Budgetfilter muss teure und fehlende Preise ausschließen.');
 assert.equal(core.displayPrice(799,7,'cabin'),1598);
 assert.equal(core.displayPrice(700,7,'night'),100);
 assert.equal(core.csvEncode('=1+1'),'"\'=1+1"','CSV-Formelinhalte müssen neutralisiert werden.');
@@ -55,9 +58,8 @@ assert.equal(core.filterTrips(trips,{...base,scope:'atlantic',ship:'AIDAprima'})
 assert.equal(core.filterTrips(trips,{...base,scope:'atlantic',month:'11'}).length,8);
 assert.equal(byId('BE34271101').startPort,'Kiel','Der tatsächliche Starthafen ist Kiel, trotz abweichendem Anbietertitel.');
 assert.equal(byId('PE37270225').end,'2027-04-03');
-const flightFixture={offers:[{cabin:'Innenkabine',tariff:'PREMIUM',price:1900,flight:true}]};
 assert.ok(core.bestOffer(flightFixture,{...base,flights:true}));
-assert.equal(core.bestOffer(byId('DI20270228'),base),null,'Erzwungene Flugpakete dürfen nicht als Kreuzfahrt ohne Flug erscheinen.');
+assert.equal(core.bestOffer(flightFixture,base),null,'Erzwungene Flugpakete dürfen nicht als Kreuzfahrt ohne Flug erscheinen.');
 
 
 const combos=core.buildCombinations(data),combinedTrips=[...trips,...combos];
@@ -130,8 +132,9 @@ const flow=mein.trips.find(t=>t.id==='MS-2050406');
 assert.equal(core.bestOffer(flow,core.defaults,'Suite'),null);
 assert.equal(core.bestOffer(flow,core.defaults,'Junior-Suite'),null);
 assert.equal(core.groupOf('Suitenkategorie (Anbietergruppe)'),'suitegroup');
-assert.ok(core.bestOffer(flow,core.defaults,'@suitegroup'));
-assert.ok(core.bestOffer(flow,core.defaults,'@suites'));
+const suiteGroupFixture={...flow,offers:[{cabin:'Suitenkategorie (Anbietergruppe)',tariff:'ANGEBOT',price:3000,flight:false}]};
+assert.ok(core.bestOffer(suiteGroupFixture,core.defaults,'@suitegroup'));
+assert.ok(core.bestOffer(suiteGroupFixture,core.defaults,'@suites'));
 assert.equal(core.bestOffer(flow,{...core.defaults,tariff:'PREMIUM'}),null);
 const relaxed=mein.trips.find(t=>t.id==='MS-2012349');
 const query=core.filterTrips(all,{...core.defaults,search:'Mein Schiff Norwegen Juli'});

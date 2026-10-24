@@ -20,7 +20,7 @@
   </div></header>
   <main class="shell">
     <section class="intro" aria-labelledby="page-title">
-      <div><p class="eyebrow">DEIN NÄCHSTES KAPITEL AUF SEE</p><h1 id="page-title">Ein Jahr. <span>Viele Horizonte.</span></h1><p class="lead">AIDA & Mein Schiff 2027 entdecken. Eure Reise finden, Kabinenpreise vergleichen.</p></div>
+      <div><p class="eyebrow">EURE REISEPLANUNG AUF EINEN BLICK</p><h1 id="page-title">Kreuzfahrten <span>2027.</span></h1><p class="lead">AIDA & Mein Schiff. Reisen finden, Kabinenpreise vergleichen.</p></div>
       <div class="snapshot"><span class="status-dot" aria-hidden="true"></span><div><strong>Preis-Momentaufnahme</strong><span id="price-date">Preisstand wird geladen …</span></div></div>
     </section>
     <nav class="view-switch" aria-label="Ansicht wählen"><button type="button" data-view="list" aria-pressed="true">Reisen & Preise</button><button type="button" data-view="calendar" aria-pressed="false">▦ Jahreskalender 2027</button></nav>
@@ -45,7 +45,8 @@
         <label>Schiff<select id="ship-select"><option value="">Alle Schiffe</option></select></label>
         <label>Welche Kabine?<select id="cabin"></select></label>
       </div>
-      <p id="search-help" class="search-help">Alle Suchwörter müssen passen. Suche nach Route, Reederei, Schiff, Start-/Zielhafen, Fahrtgebiet oder Abreisemonat.</p>
+      <p id="search-help" class="search-help">Suche nach Schiff, Route, Hafen oder Monat. Alle Suchwörter müssen passen.</p>
+      <div class="flight-choice"><label class="check"><input id="flights" type="checkbox" aria-describedby="flight-help"> Preise mit Flug einbeziehen</label><span id="flight-help">Flugpakete sind bei jedem Preis gekennzeichnet.</span></div>
       <div class="port-filters"><label>Starthafen<select id="startPort"><option value="">Alle Häfen</option></select></label><span class="port-arrow" aria-hidden="true">→</span><label>Zielhafen<select id="endPort"><option value="">Alle Häfen</option></select></label><div class="quick-choices"><span>Schnellauswahl</span><button type="button" data-quick="hamburg-round">Hamburg ↺ Hamburg</button><button type="button" data-quick="mein-schiff">Mein Schiff 2027</button><button type="button" data-quick="all">Alles anzeigen</button></div></div>
       <div class="filter-disclosures">
         <details class="advanced-filters" id="advanced-filters"><summary>Weitere Filter <span id="advanced-count"></span></summary>
@@ -57,7 +58,7 @@
             <label>Budget Kreuzfahrten pro Person<input id="budget" type="number" min="0" step="50" placeholder="Kein Limit" inputmode="numeric"></label>
             <label id="atlantic-type-field" hidden>Art der Atlantikreise<select id="atlantic-type"><option value="oneway">Einfache Überquerung</option><option value="roundtrip">Rundreisen mit Hin- und Rücküberquerung</option><option value="world">Weltreise mit Atlantikpassage</option><option value="all">Alle einschließlich Rund- und Weltreisen</option></select></label>
           </div>
-          <div class="filter-bottom"><label class="check"><input id="flights" type="checkbox"> Angebote inklusive Flug einbeziehen</label><label class="check"><input id="priced-only" type="checkbox"> Nur Reisen mit passendem Kabinenpreis</label></div>
+          <div class="filter-bottom"><label class="check"><input id="priced-only" type="checkbox"> Nur Reisen mit passendem Kabinenpreis</label></div>
         </details>
         <details class="year-section" id="month-picker"><summary>Reisemonat <span id="selected-month">Ganzes Jahr</span></summary>
           <div class="section-line"><p>Abreise im Jahr 2027</p><button type="button" id="all-months" class="text-button">Ganzes Jahr</button></div>
@@ -65,6 +66,7 @@
         </details>
       </div>
       <div class="active-filter-line"><div id="active-filters" class="active-filters" aria-label="Aktive Filter"></div><button type="button" id="reset" class="text-button">Zurücksetzen</button></div>
+      <a id="filter-result-link" class="filter-result-link" href="#results-title">Passende Reisen ansehen ↓</a>
     </section>
     <nav class="ship-nav" id="ship-nav" aria-label="Schiff schnell auswählen"></nav>
     <section id="kalender" class="results-section" aria-labelledby="results-title">

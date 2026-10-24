@@ -18,6 +18,10 @@ assert.equal(trip.priceHistory[1].points.length,count);assert.ok(trip.offers[0].
 assert.equal(core.bestOffer(trip,{...core.defaults,flights:true}),null,'Unbestätigte alte Preise gehören nicht in den aktuellen Vergleich');
 p.replaceSource(trip,0,[{...offer,price:1100,flight:true}],'2026-10-27T12:00:00Z');assert.ok(!trip.offers[0].stale);
 assert.equal(core.bestOffer(trip,{...core.defaults,flights:true}).price,1100);
+assert.equal(core.currentHistoryOffer(trip,trip.priceHistory[1]).price,1100,'Der aktuelle Verlauf muss zum gleichen Kabinenangebot passen');
+assert.equal(core.currentHistoryOffer(trip,trip.priceHistory[0]),null,'Historische Kabinen ohne aktuelles Angebot dürfen nicht als bestätigt gelten');
+trip.offers[0].stale=true;assert.equal(core.currentHistoryOffer(trip,trip.priceHistory[1]),null,'Ein Abruffehler macht den Preis historisch');delete trip.offers[0].stale;
+assert.equal(core.currentHistoryOffer(trip,{...trip.priceHistory[1],sourceUrl:'https://example.org/andere-quelle'}),null,'Die Preisquelle gehört zur Vergleichsidentität');
 assert.equal(p.euro('1.234,50 €'),1234.5);assert.equal(p.euro('ab 999 €'),null);
 const annual='<article class="card s2-card"><a href="/tui-cruises/test/123" class="s2-imgwrap"></a><span>01.01.2027</span><i data-lucide="ship"></i><span>Mein Schiff 1</span><span>01.01.2027 – 08.01.2027</span><span class="price-value">799 €</span><p class="s2-pricebox__title s2-pricebox__title--flug">Mit Flug</p><ul><li><span>Innen</span><strong>1.599 €</strong></li></ul></article>';
 const card=p.parseAnnual(annual)[0];assert.equal(card.offers.length,1);assert.equal(card.offers[0].price,1599);assert.equal(card.offers[0].flight,true,'Headline-Preis darf keine Innenkabine ohne Flug werden');

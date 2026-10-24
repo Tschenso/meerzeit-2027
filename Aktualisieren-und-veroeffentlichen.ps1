@@ -2,7 +2,7 @@
 param([switch]$OhnePreisabruf)
 $ErrorActionPreference='Stop'
 # Manueller Aufruf: Preise abrufen, prüfen, versionieren und Pages aktualisieren.
-# Keine Zugangsdaten im Skript und kein automatischer Zeitplan.
+# Keine Zugangsdaten im Skript; die Wochenplanung erfolgt separat in Codex.
 function Invoke-Checked {
   param([string]$Command,[string[]]$Arguments)
   & $Command @Arguments
