@@ -9,6 +9,10 @@ on:
         description: Nur einen begrenzten Abruf testen, ohne Preise zu speichern
         type: boolean
         default: false
+      offene_quellen:
+        description: Nur bisher unbestätigte unterstützte Quellen erneut prüfen
+        type: boolean
+        default: false
 permissions:
   contents: read
 concurrency:
@@ -27,10 +31,17 @@ jobs:
           node-version: '22'
       - name: Preisquellen ohne Datenänderung prüfen
         if: inputs.nur_pruefen
-        run: node scripts/preise-aktualisieren.cjs --source=euresa --dry-run --limit=1
+        run: node scripts/preise-aktualisieren.cjs --source=cloud --dry-run --limit=1
       - name: Aktuelle Kabinenpreise und Preisverläufe abrufen
         if: ${{ !inputs.nur_pruefen }}
-        run: node scripts/preise-aktualisieren.cjs --source=euresa
+        env:
+          PENDING_ONLY: ${{ inputs.offene_quellen }}
+        run: |
+          if [ "$PENDING_ONLY" = 'true' ]; then
+            node scripts/preise-aktualisieren.cjs --source=cloud --pending-only
+          else
+            node scripts/preise-aktualisieren.cjs --source=cloud
+          fi
       - name: Daten und Preisverlauf prüfen
         run: |
           node pruefen.cjs
@@ -50,10 +61,12 @@ jobs:
         run: |
           node - <<'NODE'
           const fs=require('node:fs'),p=require('./scripts/preise-aktualisieren.cjs');
-          let report='## Preisaktualisierung\n\nReederei | Bestätigt | Abruffehler | Manuell zu prüfen\n--- | ---: | ---: | ---:\n';
+          let report='## Preisaktualisierung\n\nErgebnisse dieses Abrufs (Quellen):\n\nReederei | Bestätigt | Abruffehler | Manuell zu prüfen\n--- | ---: | ---: | ---:\n';
           for(const [file,key,name] of [['data.js','AIDA2027','AIDA'],['mein-schiff.js','MEINSCHIFF2027','Mein Schiff']]){
-            const r=p.readData(file,key).lastUpdate;report+=`${name} | ${r.ok} | ${r.errors} | ${r.manual}\n`;
+            const d=p.readData(file,key),r=d.lastUpdate;report+=`${name}${r.partial?' (Nachabruf)':''} | ${r.ok} | ${r.errors} | ${r.manual}\n`;
           }
+          report+='\nGesamter Katalog (Reisen):\n\nReederei | Automatisch geprüft | Mit buchbaren Kabinenpreisen | Nicht buchbar / ausgebucht\n--- | ---: | ---: | ---:\n';
+          for(const [file,key,name] of [['data.js','AIDA2027','AIDA'],['mein-schiff.js','MEINSCHIFF2027','Mein Schiff']]){const c=p.readData(file,key).priceCoverage;report+=`${name} | ${c.confirmed} / ${c.trips} | ${c.withPrices} | ${c.unavailable}\n`;}
           fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,report+'\n[Öffentliches Dashboard](https://tschenso.github.io/meerzeit-2027/)\n');
           NODE
   publish:
