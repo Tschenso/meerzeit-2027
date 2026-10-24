@@ -2,6 +2,40 @@
 
 Ein statisches Kreuzfahrt-Dashboard mit Suche, Kabinenpreisvergleich und Jahreskalender. Es arbeitet ohne Installation oder externe Laufzeitdienste direkt im Browser.
 
+**Öffentliche Seite:** [MEERZEIT 2027](https://tschenso.github.io/meerzeit-2027/) · [Jahreskalender](https://tschenso.github.io/meerzeit-2027/#kalender). Auch über mobile Daten erreichbar; der lokale Rechner muss dafür nicht laufen.
+
+## Preise aktualisieren und Verlauf ansehen
+
+In den Reisedetails steht ein Preisdiagramm mit allen dokumentierten Preisständen. Kabine, Tarif, Flugpaket, Belegung und Anbieter bleiben getrennt. Der Verlauf beginnt mit den tatsächlich vorhandenen Abrufen vom 23./24. Oktober 2026. Frühere Preise werden nicht nachträglich erfunden. Bei berechneten Kombinationen öffnen die Schaltflächen unter den Teilreisen deren Preisverläufe; eine wechselnde Zusammenstellung wird nicht als durchgehend gleiches Paket dargestellt.
+
+Mit Node.js 22 oder neuer:
+
+```sh
+node scripts/preise-aktualisieren.cjs
+node pruefen.cjs
+node scripts/preise-pruefen.cjs
+```
+
+Das Skript aktualisiert die **bereits erfassten Reisen**, einschließlich der zwei unterstützenden Abfahrten 2028. Es liest die öffentlichen EURESA-Kategoriepreise, die paginierte Mein-Schiff-Jahresliste und die vorhandenen mykreuzfahrt-AIDA-Detailseiten. Es fügt keine neuen Katalogreisen hinzu. Die Jahresliste kann inzwischen weniger Reisen enthalten; verschwundene Reisen bleiben mit ihrem bisherigen Verlauf erhalten, werden aber nicht als frisch bestätigt ausgegeben.
+
+`--dry-run` prüft den Abruf ohne Dateien zu schreiben. Mit `--operator=aida` oder `--operator=mein-schiff` lässt sich die Quelle eingrenzen; `--limit=3` begrenzt zum Test die Anzahl bearbeiteter Quellen. Ohne Optionen werden alle unterstützten Quellen abgefragt. EURESA wird nacheinander mit kurzer Pause angefragt, HTTP-Anfragen haben ein Zeitlimit. Es werden keine Zugangsdaten benötigt.
+
+Der Verlauf speichert pro Angebotsreihe einen Stand je UTC-Tag, zusätzlich jede beobachtete Preisänderung innerhalb des Tages. Ein weggefallener Kategoriepreis wird als Lücke erfasst. Ein Abruffehler erzeugt keinen neuen Preispunkt und setzt keinen Preis auf null. Der letzte bestätigte Abrufzeitpunkt bleibt erhalten; bisherige Angebote werden als alt markiert und vom aktuellen Vergleich ausgeschlossen. Charter- und zusätzliche offizielle Quellen ohne implementierten Parser benötigen eine manuelle Prüfung und behalten ihren dokumentierten Stand. Scheitern sämtliche unterstützten Abfragen einer bearbeiteten Reederei, bleiben beide Datendateien unverändert.
+
+### Aktualisieren direkt auf GitHub
+
+Unter [Actions → Dashboard veröffentlichen und Preise aktualisieren](https://github.com/Tschenso/meerzeit-2027/actions/workflows/pages.yml) auf **Run workflow** klicken. Das aktivierte Feld „Aktuelle Preise abrufen und den Verlauf fortschreiben“ führt den Abruf aus, prüft die Daten, sichert die Preisstände als Git-Commit und veröffentlicht die Seite neu. Ohne dieses Feld wird nur der aktuelle Repository-Stand veröffentlicht. **Es ist kein automatischer Zeitplan eingerichtet.**
+
+Die lokale Skriptausführung verändert zunächst nur die lokalen Datendateien. Für die öffentliche Seite die geprüften Änderungen committen und nach `main` pushen oder den GitHub-Workflow verwenden. Der Git-Verlauf erhält vorherige Datenstände.
+
+### GitHub Pages bauen
+
+```sh
+node scripts/build-pages.cjs
+```
+
+Der Build kopiert ausschließlich die sieben Laufzeitdateien und `.nojekyll` nach `dist/`. Der Workflow veröffentlicht dieses Paket über GitHub Pages mit HTTPS. Lokale Sicherungen, Betriebsdateien und Skripte sind nicht im Webpaket. Das Repository selbst ist öffentlich. Jeder Push nach `main` prüft und veröffentlicht den aktuellen Stand erneut.
+
 ## Enthaltene Reisen
 
 - **690 veröffentlichte Reisevarianten**: 191 recherchierte AIDA-Angebote und 499 Mein-Schiff-Angebote auf neun Schiffen.
@@ -53,7 +87,7 @@ Berechnete Kombinationen werden als Kombinationsstarts mit dem Schiff der ersten
 
 ## Preise, Datenstand und Quellen
 
-**Datenstand: 23./24. Oktober 2026.** Die eingebetteten Daten enthalten einschließlich der zwei unterstützenden Teilreisen 2028 insgesamt 6.608 veröffentlichte Preisbelege. Gleiche Preise verschiedener Quellen können getrennt erscheinen.
+**Katalogstand: 23./24. Oktober 2026.** Den letzten Preisabruf und dessen erfolgreiche bzw. unbestätigte Quellen zeigt die Seite an. Gleiche Preise verschiedener Quellen können getrennt erscheinen. Die zwei unterstützenden Teilreisen 2028 sind in der Preisaktualisierung enthalten.
 
 Die Preise sind Ab-Preise pro Person; die Vergleichsansicht rechnet für zwei Erwachsene in einer Kabine. Preisquelle und Abrufzeit stehen bei den Angeboten. Fehlende Preise sind keine Aussage über die Verfügbarkeit. Flugpakete bleiben gekennzeichnet und können gesondert einbezogen werden.
 

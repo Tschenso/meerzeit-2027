@@ -28,8 +28,9 @@ assert.equal(core.bestOffer(byId('LU07270531'),base),null,'Ausgebuchte Charterpr
 assert.equal(core.bestOffer(byId('LU14270524'),base),null,'Kombinationspreise dürfen nicht aus Einzelpreisen erfunden werden.');
 assert.ok(core.eligibleOffers(byId('PR20271105'),base).every(o=>!o.flight),'Flugpakete dürfen nicht in den Standardvergleich rutschen.');
 assert.ok(core.eligibleOffers(byId('PR20271105'),{...base,flights:true}).some(o=>o.flight),'Erfasste Flugpakete müssen separat auswählbar sein.');
-assert.ok(core.bestOffer(byId('PE14271023'),base,'@junior'));
-assert.equal(core.bestOffer(byId('PE14271023'),base,'@suite'),null,'Eine Junior-Suite darf keine volle Suite ersetzen.');
+const juniorFixture={offers:[{cabin:'Junior-Suite',tariff:'PREMIUM',price:1500,flight:false}]};
+assert.ok(core.bestOffer(juniorFixture,base,'@junior'));
+assert.equal(core.bestOffer(juniorFixture,base,'@suite'),null,'Eine Junior-Suite darf keine volle Suite ersetzen.');
 const jan=core.filterTrips(trips,{...base,month:'1'});
 assert.ok(jan.length&&jan.every(t=>t.scope==='hamburg'&&t.start.slice(5,7)==='01'));
 const incoming=core.filterTrips(trips,{...base,scope:'incoming'});
@@ -54,7 +55,8 @@ assert.equal(core.filterTrips(trips,{...base,scope:'atlantic',ship:'AIDAprima'})
 assert.equal(core.filterTrips(trips,{...base,scope:'atlantic',month:'11'}).length,8);
 assert.equal(byId('BE34271101').startPort,'Kiel','Der tatsächliche Starthafen ist Kiel, trotz abweichendem Anbietertitel.');
 assert.equal(byId('PE37270225').end,'2027-04-03');
-assert.ok(core.bestOffer(byId('DI20270228'),{...base,flights:true}));
+const flightFixture={offers:[{cabin:'Innenkabine',tariff:'PREMIUM',price:1900,flight:true}]};
+assert.ok(core.bestOffer(flightFixture,{...base,flights:true}));
 assert.equal(core.bestOffer(byId('DI20270228'),base),null,'Erzwungene Flugpakete dürfen nicht als Kreuzfahrt ohne Flug erscheinen.');
 
 
@@ -74,27 +76,30 @@ assert.deepEqual([mar65.start,mar65.end,mar65.nights],['2027-11-05','2028-01-09'
 assert.deepEqual([winter.nights,winter.cruiseNights,winter.stayNights],[148,48,100]);
 assert.deepEqual([comboById('COMBO-PR27-BE20').cruiseNights,comboById('COMBO-PR27-BE20').stayNights],[47,101]);
 assert.equal(comboById('COMBO-PR34-BE28').stayNights,86);
-assert.equal(core.bestOffer(luna64,base),null,'Fehlender Innen-Teilpreis darf nicht durch einen Meerblickpreis ersetzt werden.');
-assert.equal(core.bestOffer(luna64,base,'@outside').price,9414);
-assert.equal(core.bestOffer(mar65,base).price,7990);
-assert.equal(core.bestOffer(mar65,base,'@balcony').price,13220);
-assert.equal(core.bestOffer(mar65,base,'@suite'),null,'Eine fehlende Suite auf der ersten Teilreise darf keine Suite-Summe erzeugen.');
-assert.equal(core.bestOffer(winter,{...base,flights:true}).price,4000,'Eine Rundreisensumme muss Flugpakete ausschließen.');
-assert.equal(core.bestOffer(winter,base,'@balcony').price,6565);
-assert.equal(core.bestOffer(winter,{...base,tariff:'PREMIUM'}),null,'Anbieterpreise mit unbestätigtem Tarif dürfen nicht als PREMIUM gelten.');
-assert.ok(core.bestOffer(winter,base).components.every(o=>!o.flight));
+// Preisregressionen verwenden feste Angebote; Live-Preise dürfen sich ändern.
+const fixtureLeg=(id,start,end,startPort,endPort,offers)=>({id,ship:'Testschiff',start,end,startPort,endPort,nights:(Date.parse(end)-Date.parse(start))/86400000,offers,sources:[{url:'https://example.org/'+id,checkedAt:'2026-10-23T12:00:00Z'}]});
+const fixtureOffer=(cabin,price,extra={})=>({cabin,price,tariff:'ANGEBOT',flight:false,source:0,...extra});
+const fixtureData={trips:[fixtureLeg('a','2027-11-05','2027-11-25','Hamburg','La Romana',[fixtureOffer('Innenkabine',1620),fixtureOffer('Balkonkabine',2460),fixtureOffer('Meerblickkabine',2060),fixtureOffer('Innenkabine',100,{flight:true})]),fixtureLeg('b','2028-03-04','2028-04-01','La Romana','Hamburg',[fixtureOffer('Innenkabine',2380),fixtureOffer('Balkonkabine',4105),fixtureOffer('Meerblickkabine',3230),fixtureOffer('Suite',5000)])],combinations:[{id:'fixture',route:'Test',legIds:['a','b']}]};
+const fixtureCombo=core.buildCombinations(fixtureData)[0];
+assert.equal(core.bestOffer(fixtureCombo,{...base,flights:true}).price,4000,'Eine Rundreisensumme muss Flugpakete ausschließen.');
+assert.equal(core.bestOffer(fixtureCombo,base,'@balcony').price,6565);
+assert.equal(core.bestOffer(fixtureCombo,base,'@suite'),null,'Ein fehlender Suite-Teilpreis muss die Summe offen lassen.');
+assert.equal(core.bestOffer(fixtureCombo,{...base,tariff:'PREMIUM'}),null);
+assert.ok(core.bestOffer(fixtureCombo,base).components.every(o=>!o.flight));
+const missingFixture=structuredClone(fixtureCombo);missingFixture.legs[1].offers=missingFixture.legs[1].offers.filter(o=>o.cabin!=='Innenkabine');
+assert.equal(core.bestOffer(missingFixture,base),null,'Fehlende Innenkabine darf nicht durch Meerblick ersetzt werden.');
 assert.equal(core.displayPrice(4000,core.priceNights(winter),'night'),4000/48,'Der Bordnachtpreis darf nicht durch die unbezahlten Hotelnächte verbilligt werden.');
-const comboCsv=core.csvRowsForTrip(luna64,base);
+const comboCsv=core.csvRowsForTrip(missingFixture,base);
 assert.equal(comboCsv.length,5);
 assert.ok(comboCsv.every(row=>row.length===23));
 const missingInside=comboCsv.find(row=>row[7]==='Innenkabine');
 assert.equal(missingInside[9],'');
-assert.equal(missingInside[18],'4399,00');
+assert.equal(missingInside[18],'1620,00');
 assert.equal(missingInside[19],'');
-const winterCsv=core.csvRowsForTrip(winter,base).find(row=>row[7]==='Innenkabine');
+const winterCsv=core.csvRowsForTrip(fixtureCombo,base).find(row=>row[7]==='Innenkabine');
 assert.equal(winterCsv[9],'4000,00');assert.equal(winterCsv[10],'8000,00');assert.equal(winterCsv[15],48);assert.equal(winterCsv[16],100);
 assert.ok(winterCsv[20].includes('Unterkunft'));
-assert.ok(winterCsv[12].includes('2032183')&&winterCsv[12].includes('2045731'),'Beide Quellen müssen exportiert werden.');
+assert.ok(winterCsv[12].includes('example.org/a')&&winterCsv[12].includes('example.org/b'),'Beide Quellen müssen exportiert werden.');
 assert.equal(core.filterTrips(combinedTrips,{...base,scope:'roundtrip',roundtripType:'combined',ship:'AIDAbella'}).length,3);
 assert.throws(()=>core.buildCombinations({...data,combinations:[{id:'bad-port',route:'Test',legIds:['PR09271105','MA21271219']}]}),/Anschlusshäfen/);
 for(const combo of combos){assert.equal(combo.nights,combo.cruiseNights+combo.stayNights);assert.ok(combo.legs.every(leg=>leg.sources.length));}
@@ -122,7 +127,6 @@ for(const t of mein.trips){
   for(const s of t.sources){assert.ok(s.url.startsWith('https://'));assert.ok(Number.isFinite(Date.parse(s.checkedAt)));}
 }
 const flow=mein.trips.find(t=>t.id==='MS-2050406');
-assert.equal(core.bestOffer(flow,core.defaults).price,4699);
 assert.equal(core.bestOffer(flow,core.defaults,'Suite'),null);
 assert.equal(core.bestOffer(flow,core.defaults,'Junior-Suite'),null);
 assert.equal(core.groupOf('Suitenkategorie (Anbietergruppe)'),'suitegroup');
@@ -130,8 +134,6 @@ assert.ok(core.bestOffer(flow,core.defaults,'@suitegroup'));
 assert.ok(core.bestOffer(flow,core.defaults,'@suites'));
 assert.equal(core.bestOffer(flow,{...core.defaults,tariff:'PREMIUM'}),null);
 const relaxed=mein.trips.find(t=>t.id==='MS-2012349');
-assert.equal(core.bestOffer(relaxed,core.defaults),null,'Ein allgemeiner Ab-Preis darf nicht einer Innenkabine zugeordnet werden.');
-assert.equal(core.bestOffer(relaxed,{...core.defaults,flights:true}).price,1599);
 const query=core.filterTrips(all,{...core.defaults,search:'Mein Schiff Norwegen Juli'});
 assert.ok(query.length&&query.every(t=>core.operatorOf(t)==='Mein Schiff'&&t.start.slice(5,7)==='07'&&/Norwegen/i.test(t.route)));
 const reversed=core.filterTrips(all,{...core.defaults,search:'JULI norwegen schiff mein'});

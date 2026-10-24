@@ -53,13 +53,18 @@
   function combinationPriceRows(trip,state){return CombinationCore.priceRows(trip,state,{eligibleOffers,groupOf});}
   function eligibleOffers(trip, state) {
     if(trip.isCombination)return combinationPriceRows(trip,state).map(row=>row.offer).filter(Boolean);
-    return trip.offers.filter(o => Number.isFinite(o.price) && o.price > 0 && !o.soldOut && !o.onRequest &&
+    return trip.offers.filter(o => Number.isFinite(o.price) && o.price > 0 && !o.soldOut && !o.onRequest && !o.stale &&
       (state.flights || !o.flight) &&
       (state.tariff === 'ALL' || (state.tariff === 'BASE' ? BASE.has(o.tariff) : o.tariff === state.tariff)));
   }
   function bestOffer(trip, state, selection = state.cabin) {
     return eligibleOffers(trip, state).filter(o => cabinMatches(o.cabin, selection))
       .sort((a,b) => a.price - b.price || Number(a.flight) - Number(b.flight))[0] || null;
+  }
+  function historyStats(series){
+    const points=(series?.points||[]).filter(p=>p[2]==='available'&&Number.isFinite(p[1])&&p[1]>0);
+    const last=series?.points?.at(-1);
+    return {points,first:points[0]||null,last:last?.[2]==='available'?last:null,min:points.length?Math.min(...points.map(p=>p[1])):null,max:points.length?Math.max(...points.map(p=>p[1])):null};
   }
   function scopeMatches(trip,state) {
     if(state.scope==='all')return !trip.isCombination;
@@ -135,7 +140,7 @@
     });
   }
   if (typeof document === 'undefined') {
-    if (typeof module !== 'undefined') module.exports = {operatorOf,harborKey,portMatches,searchMatches,buildCombinations:CombinationCore.buildCombinations,combinationPriceRows,shipsOf,priceNights,csvRowsForTrip,offerSources,scopeMatches,groupOf,cabinMatches,eligibleOffers,bestOffer,filterTrips,sortTrips,displayPrice,csvEncode,defaults};
+    if (typeof module !== 'undefined') module.exports = {historyStats,operatorOf,harborKey,portMatches,searchMatches,buildCombinations:CombinationCore.buildCombinations,combinationPriceRows,shipsOf,priceNights,csvRowsForTrip,offerSources,scopeMatches,groupOf,cabinMatches,eligibleOffers,bestOffer,filterTrips,sortTrips,displayPrice,csvEncode,defaults};
     return;
   }
   const AIDA = window.AIDA2027, MEIN = window.MEINSCHIFF2027;
@@ -156,7 +161,13 @@
   const cabinOptions = [['@any','Günstigste Kabinenart'],['Innenkabine','Innenkabine'],['Meerblickkabine','Meerblick / Außenkabine'],['@balcony','Balkon / Veranda – alle'],['Balkonkabine','Balkonkabine'],['Verandakabine','Verandakabine'],['Verandakabine Komfort','Veranda Komfort'],['Verandakabine Deluxe','Veranda Deluxe'],['Panorama-Balkonkabine','Panorama-Balkonkabine'],['Junior-Suite','Junior-Suite'],['Suite','Suite – eindeutig bestimmt'],['@suitegroup','Suite – Anbietergruppe*']];
   $('cabin').innerHTML = cabinOptions.map(([v,l])=>`<option value="${escape(v)}">${escape(l)}</option>`).join('');
   $('cabin').value = state.cabin;
-  $('price-date').textContent = 'AIDA: '+stamp(AIDA.generatedAt)+' · Mein Schiff: '+stamp(MEIN.generatedAt)+' Uhr';
+  $('price-date').textContent = 'Preisabruf AIDA: '+stamp(AIDA.lastUpdate?.attemptedAt||AIDA.generatedAt)+' · Mein Schiff: '+stamp(MEIN.lastUpdate?.attemptedAt||MEIN.generatedAt)+' Uhr';
+  const updates=[['AIDA',AIDA.lastUpdate],['Mein Schiff',MEIN.lastUpdate]].filter(([,r])=>r);
+  if(updates.length){
+    const notice=document.createElement('p');notice.className='update-notice';
+    notice.textContent=updates.map(([name,r])=>`${name}: ${r.ok} Quellen aktualisiert${r.errors?', '+r.errors+' Abruffehler':''}${r.manual?', '+r.manual+' manuell zu prüfen':''}${r.skipped?', '+r.skipped+' nicht abgefragt':''}`).join(' · ')+'. Unbestätigte alte Preise stehen nur in den Details und im Verlauf.';
+    document.querySelector('.intro').after(notice);
+  }
   let filtered = [],currentView=window.location.hash==='#kalender'?'calendar':'list';
   const calendar=CalendarCore.create({root:$('calendar-panel'),year:2027,operatorOf,harborKey,harborLabel,bestOffer,displayPrice,priceNights,money,date,escape,tariffName,
     cabinLabel:selection=>cabinOptions.find(([value])=>value===selection)?.[1]||selection,
@@ -321,22 +332,51 @@
       return `<td><strong>${integerMoney(part.offer.price)}</strong><small>${escape(part.offer.cabin)}<br>${escape(tariffName(part.offer.tariff))}</small><a href="${escape(source.url)}" target="_blank" rel="noopener noreferrer">Quelle ↗</a></td>`;
     };
     const priceTable=`<div class="combination-table-wrap"><table class="combination-prices"><caption>Kreuzfahrten-Summen · ${escape($('tariff').selectedOptions[0].textContent)} · ohne Flug</caption><thead><tr><th>Kabinenart</th><th>Kreuzfahrt 1 / Person</th><th>Kreuzfahrt 2 / Person</th><th>Summe / Person</th><th>Summe / 2 Erw.</th></tr></thead><tbody>${rows.map(row=>`<tr><td>${escape(row.label)}</td>${row.parts.map(partCell).join('')}<td class="sum-cell"><strong>${row.offer?integerMoney(row.offer.price):'—'}</strong><small>${row.offer?'Σ Einzelpreise':'Teilpreis fehlt'}</small></td><td class="sum-cell"><strong>${row.offer?integerMoney(row.offer.price*2):'—'}</strong><small>${row.offer?'für 2 Erwachsene':'keine vollständige Summe'}</small></td></tr>`).join('')}</tbody></table></div>`;
-    const individual=t.legs.map((leg,index)=>`<details class="leg-quotes"><summary>Alle erfassten Kabinen und Tarife für Kreuzfahrt ${index+1} · ${escape(leg.ship)}</summary><p class="source-note">${escape(leg.route)} · ${date(leg.start)} – ${date(leg.end)}</p><div class="offer-table-wrap"><table class="offer-table"><thead><tr><th>Kabinenart</th><th>Tarif / Paket</th><th class="number">Pro Person</th><th class="number">2 Erwachsene</th><th>Quelle</th></tr></thead><tbody>${leg.offers.map(o=>`<tr><td>${escape(o.cabin)}</td><td>${escape(tariffName(o.tariff))}<br><span class="muted">${o.flight?'inkl. Flug · nicht in der Summe':'ohne Flug'}</span></td><td class="number">${integerMoney(o.price)}</td><td class="number">${integerMoney(o.price*2)}</td><td><a href="${escape(leg.sources[o.source].url)}" target="_blank" rel="noopener noreferrer">Angebot ↗</a></td></tr>`).join('')}</tbody></table></div><div class="source-note">${leg.sources.map(s=>`<div><a href="${escape(s.url)}" target="_blank" rel="noopener noreferrer">${escape(s.label)}</a> · abgerufen ${escape(stamp(s.checkedAt))} Uhr</div>`).join('')}</div></details>`).join('');
+    const individual=t.legs.map((leg,index)=>`<details class="leg-quotes"><summary>Alle erfassten Kabinen und Tarife für Kreuzfahrt ${index+1} · ${escape(leg.ship)}</summary><p class="source-note">${escape(leg.route)} · ${date(leg.start)} – ${date(leg.end)}</p><div class="offer-table-wrap"><table class="offer-table"><thead><tr><th>Kabinenart</th><th>Tarif / Paket</th><th class="number">Pro Person</th><th class="number">2 Erwachsene</th><th>Quelle</th></tr></thead><tbody>${leg.offers.map(o=>`<tr><td>${escape(o.cabin)}</td><td>${escape(tariffName(o.tariff))}<br><span class="muted">${o.flight?'inkl. Flug · nicht in der Summe':'ohne Flug'}</span></td><td class="number">${integerMoney(o.price)}</td><td class="number">${integerMoney(o.price*2)}</td><td><a href="${escape(leg.sources[o.source].url)}" target="_blank" rel="noopener noreferrer">Angebot ↗</a></td></tr>`).join('')}</tbody></table></div><button type="button" class="history-leg-button" data-history-trip="${escape(leg.id)}">Preisverlauf dieser Teilreise ansehen →</button><div class="source-note">${leg.sources.map(s=>`<div><a href="${escape(s.url)}" target="_blank" rel="noopener noreferrer">${escape(s.label)}</a> · abgerufen ${escape(stamp(s.checkedAt))} Uhr</div>`).join('')}</div></details>`).join('');
     $('dialog-content').innerHTML=`<div class="combination-duration"><strong>${t.nights} Nächte gesamt</strong><span>${t.cruiseNights} Nächte an Bord</span><span>${t.stayNights?t.stayNights+' Nächte Zwischenaufenthalt':'Direkter Anschluss · '+(t.shipNames.length===1?'gleiches Schiff':'Schiffwechsel')}</span></div><p class="detail-note">${escape(costNotice)}</p>${priceTable}<p class="source-note">Je Kabinengruppe wird der günstigste passende Preis ohne Flug auf jeder Teilreise verwendet. Die konkrete Kabinenart und der Tarif stehen bei den Teilpreisen. Unterschiedliche Tarife können unterschiedliche Leistungen haben. Fehlt ein Teilpreis, bleibt die Summe offen. Der Preis pro Bordnacht bezieht sich auf ${t.cruiseNights} Nächte an Bord.</p><h3 class="combo-plan-heading">Reiseablauf</h3><ol class="leg-plan">${plan}</ol>${t.note?`<p class="source-note">${escape(t.note)}</p>`:''}${individual}`;
     if(!$('trip-dialog').open)$('trip-dialog').showModal();
   }
+  let historyTrip=null;
+  function historyMarkup(t){
+    const series=t.priceHistory||[];
+    if(!series.length)return '<section class="price-history"><h3>Preisverlauf</h3><p>Noch keine vergleichbaren Beobachtungen erfasst.</p></section>';
+    return `<section class="price-history" aria-labelledby="history-title"><div class="history-heading"><div><p class="eyebrow">PREISE IM ZEITVERLAUF</p><h3 id="history-title">Was kostet eure Reise wann?</h3></div><span class="badge">Pro Person · 2 Erwachsene</span></div><label for="history-series">Kabine, Tarif und Flugpaket</label><select id="history-series">${series.map((s,i)=>`<option value="${i}">${escape(s.cabin)} · ${escape(tariffName(s.tariff))} · ${s.flight?'mit Flug':'ohne Flug'} · ${escape(new URL(s.sourceUrl).hostname)}</option>`).join('')}</select><div id="history-chart" aria-live="polite"></div><p class="source-note">Jede Linie vergleicht dieselbe Kabine, denselben Tarif, dieselbe Flugart und dieselbe Quelle für 2 Erwachsene. Der Verlauf beginnt mit dem ersten dokumentierten Abruf. Fehlende Kategoriepreise sind Lücken; ein Abruffehler erzeugt keinen neuen Preispunkt.</p></section>`;
+  }
+  function renderHistory(index){
+    const series=historyTrip?.priceHistory?.[index],root=$('history-chart');if(!root||!series)return;
+    const stats=historyStats(series),points=series.points,valid=stats.points;
+    const first=stats.first,last=stats.last,diff=first&&last?last[1]-first[1]:null;
+    const start=Date.parse(points[0][0]),end=Date.parse(points.at(-1)[0]);
+    const lo=stats.min||0,hi=stats.max||1,pad=Math.max((hi-lo)*.15,hi*.01,1);
+    const x=p=>54+(Date.parse(p[0])-start)/Math.max(end-start,1)*600;
+    const y=p=>160-(p[1]-lo+pad)/(hi-lo+2*pad)*130;
+    let runs=[],run=[];for(const p of points){if(p[2]==='available'&&p[1]>0)run.push(p);else if(run.length){runs.push(run);run=[];}}if(run.length)runs.push(run);
+    const svg=valid.length?`<svg class="history-svg" viewBox="0 0 700 208" role="img" aria-label="Preisverlauf ${escape(series.cabin)}: ${valid.length} Beobachtungen, von ${escape(stamp(points[0][0]))} bis ${escape(stamp(points.at(-1)[0]))}"><line x1="54" y1="160" x2="654" y2="160" stroke="currentColor" opacity=".2"/><text x="4" y="25">${integerMoney(hi)}</text><text x="4" y="156">${integerMoney(lo)}</text>${runs.map(r=>`<polyline fill="none" stroke="var(--history-line,#066b72)" stroke-width="3" points="${r.map(p=>x(p).toFixed(2)+','+y(p).toFixed(2)).join(' ')}"/>`).join('')}${valid.map(p=>`<circle cx="${x(p).toFixed(2)}" cy="${y(p).toFixed(2)}" r="4" fill="var(--history-line,#066b72)"><title>${escape(stamp(p[0]))}: ${integerMoney(p[1])}</title></circle>`).join('')}<text x="54" y="195">${date(points[0][0].slice(0,10))}</text><text x="654" y="195" text-anchor="end">${date(points.at(-1)[0].slice(0,10))}</text></svg>`:'';
+    const labels={available:'Veröffentlichter Ab-Preis',unavailable:'Kategoriepreis nicht mehr geliefert',soldout:'Als ausgebucht erfasst',request:'Auf Anfrage'};
+    root.innerHTML=`<div class="history-metrics"><div><span>Letzte Beobachtung</span><strong>${last?integerMoney(last[1]):'Kein verfügbarer Preis'}</strong><small>${escape(stamp(points.at(-1)[0]))} Uhr</small></div><div><span>Seit erster Beobachtung</span><strong>${diff===null?'—':(diff>0?'+':'')+integerMoney(diff)}</strong><small>${points.length} erfasste Preisstände</small></div><div><span>Bisheriger Tiefstpreis</span><strong>${stats.min===null?'—':integerMoney(stats.min)}</strong><small>gleiche Angebotsgrundlage</small></div></div>${svg}${points.length<2?'<p class="history-empty">Erster Preisstand erfasst. Nach dem nächsten erfolgreichen Abruf entsteht der Verlauf.</p>':''}<details class="history-observations"><summary>Alle Preisstände als Tabelle</summary><div class="offer-table-wrap"><table class="offer-table"><thead><tr><th>Abrufzeitpunkt</th><th class="number">Pro Person</th><th>Status</th></tr></thead><tbody>${[...points].reverse().map(p=>`<tr><td>${escape(stamp(p[0]))} Uhr</td><td class="number">${p[1]===null?'—':integerMoney(p[1])}</td><td>${escape(labels[p[2]]||p[2])}</td></tr>`).join('')}</tbody></table></div></details><p class="source-note">Quelle: <a href="${escape(series.sourceUrl)}" target="_blank" rel="noopener noreferrer">${escape(new URL(series.sourceUrl).hostname)} ↗</a> · EUR pro Person</p>`;
+  }
+  function initHistory(t){
+    historyTrip=t;const select=$('history-series');if(!select)return;
+    const selected=bestOffer(t,state);
+    let index=selected?(t.priceHistory||[]).findIndex(s=>s.cabin===selected.cabin&&s.tariff===selected.tariff&&s.flight===selected.flight&&new URL(s.sourceUrl).hostname===new URL(t.sources[selected.source].url).hostname):-1;
+    if(index<0)index=(t.priceHistory||[]).findIndex(s=>cabinMatches(s.cabin,state.cabin)&&(!s.flight||state.flights)&&historyStats(s).last);
+    if(index<0)index=0;select.value=String(index);renderHistory(index);
+  }
+  $('dialog-content').addEventListener('change',event=>{if(event.target.id==='history-series')renderHistory(Number(event.target.value));});
+  $('dialog-content').addEventListener('click',event=>{const button=event.target.closest('[data-history-trip]');if(button)showDetail(button.dataset.historyTrip);});
   function showDetail(id) {
-    const t = trips.find(t=>t.id === id);if(!t)return;
+    const t = [...trips,...(DATA.supportingTrips||[])].find(t=>t.id === id);if(!t)return;
     if(t.isCombination){showCombinationDetail(t);return;}
     $('dialog-ship').textContent = operatorOf(t)+' · '+t.ship + (t.charter?' · Charterreise':t.atlantic?' · '+({oneway:'Atlantiküberquerung',roundtrip:'Karibik-Rundreise',world:'Weltreise'})[t.atlantic]:t.scope==='incoming'?' · Transitreise':'');
     $('dialog-title').textContent = t.route;
     $('dialog-dates').textContent = `${date(t.start)} – ${date(t.end)} · ${t.nights} Nächte · ${t.startPort} → ${t.endPort}`;
     const isMein=operatorOf(t)==='Mein Schiff';
     const note = (t.bookingUrl?`<p class="booking-link"><a class="primary-button" href="${escape(t.bookingUrl)}" target="_blank" rel="noopener noreferrer">Reise beim Anbieter öffnen ↗</a></p>`:'')+(!isMein&&t.note?`<p class="detail-note">${escape(t.note)}</p>`:isMein?'<p class="source-note">Mein Schiff · All Inclusive. Konkreter Tarif beim Anbieter prüfen. „Suitenkategorie“ kann Junior-Suiten enthalten.</p>':'');
-    const sources = t.sources.map((s,i)=>`<div>[${i+1}] <a href="${escape(s.url)}" target="_blank" rel="noopener noreferrer">${escape(s.label)}</a> · abgerufen ${escape(stamp(s.checkedAt))} Uhr</div>`).join('');
+    const sources = t.sources.map((s,i)=>`<div>[${i+1}] <a href="${escape(s.url)}" target="_blank" rel="noopener noreferrer">${escape(s.label)}</a> · abgerufen ${escape(stamp(s.checkedAt))} Uhr${s.updateStatus&&s.updateStatus!=='ok'?' · '+escape(s.updateError||'Erneut prüfen'):''}</div>`).join('');
     const offers=[...t.offers].sort((a,b)=>Number(a.flight)-Number(b.flight)||groupOf(a.cabin).localeCompare(groupOf(b.cabin))||a.cabin.localeCompare(b.cabin,'de')||a.price-b.price);
-    $('dialog-content').innerHTML = note + '<p class="source-note">Veröffentlichte Ab-Preise für 2 Erwachsene. Einzelne Kategoriecodes, Tarife und Flugpakete bleiben getrennt. Die Tabellenwerte sind keine verbindliche Buchungszusage.</p>' + (offers.length ? `<div class="offer-table-wrap"><table class="offer-table"><thead><tr><th>Kabinenart</th><th>Tarif / Paket</th><th class="number">Pro Person</th><th class="number">Kabine / 2 Erw.</th><th>Status / Quelle</th></tr></thead><tbody>${offers.map(o=>`<tr${o.soldOut?' class="sold-out"':''}><td>${escape(o.cabin)}</td><td>${escape(tariffName(o.tariff))}<br><span class="muted">${o.flight?'inkl. Flug':'ohne Flug'}</span></td><td class="number">${integerMoney(o.price)}</td><td class="number">${integerMoney(o.price*2)}</td><td>${o.soldOut?'ausgebucht · veröffentlichter Preis':o.onRequest?'auf Anfrage · veröffentlichter Preis':'Ab-Preis'}<br><a href="${escape(t.sources[o.source].url)}" target="_blank" rel="noopener noreferrer">Angebot [${o.source+1}] ↗</a></td></tr>`).join('')}</tbody></table></div>` : '<p class="detail-note">Für diese Reise wurde bei der Preisabfrage kein Kabinenpreis geliefert. Bitte den Anbieterlink für eine erneute Prüfung öffnen.</p>') + (isMein&&t.note?`<details class="leg-quotes"><summary>Preisgrundlage und Kabineneinordnung</summary><p class="source-note">${escape(t.note)}</p></details>`:'') + `<div class="source-note">${sources}</div>`;
-    $('trip-dialog').showModal();
+    $('dialog-content').innerHTML = note + historyMarkup(t) + '<p class="source-note">Veröffentlichte Ab-Preise für 2 Erwachsene. Einzelne Kategoriecodes, Tarife und Flugpakete bleiben getrennt. Die Tabellenwerte sind keine verbindliche Buchungszusage.</p>' + (offers.length ? `<div class="offer-table-wrap"><table class="offer-table"><thead><tr><th>Kabinenart</th><th>Tarif / Paket</th><th class="number">Pro Person</th><th class="number">Kabine / 2 Erw.</th><th>Status / Quelle</th></tr></thead><tbody>${offers.map(o=>`<tr${o.soldOut?' class="sold-out"':''}><td>${escape(o.cabin)}</td><td>${escape(tariffName(o.tariff))}<br><span class="muted">${o.flight?'inkl. Flug':'ohne Flug'}</span></td><td class="number">${integerMoney(o.price)}</td><td class="number">${integerMoney(o.price*2)}</td><td>${o.stale?'Alter Preis · erneut prüfen':o.soldOut?'ausgebucht · veröffentlichter Preis':o.onRequest?'auf Anfrage · veröffentlichter Preis':'Ab-Preis'}<br><a href="${escape(t.sources[o.source].url)}" target="_blank" rel="noopener noreferrer">Angebot [${o.source+1}] ↗</a></td></tr>`).join('')}</tbody></table></div>` : '<p class="detail-note">Für diese Reise wurde bei der Preisabfrage kein Kabinenpreis geliefert. Bitte den Anbieterlink für eine erneute Prüfung öffnen.</p>') + (isMein&&t.note?`<details class="leg-quotes"><summary>Preisgrundlage und Kabineneinordnung</summary><p class="source-note">${escape(t.note)}</p></details>`:'') + `<div class="source-note">${sources}</div>`;
+    initHistory(t);
+    if(!$('trip-dialog').open)$('trip-dialog').showModal();
   }
   function exportCSV() {
     const header=['Schiff','Reise','Start','Ende','Gesamtdauer Nächte','Starthafen','Zielhafen','Kabinenart','Tarif','Preis pro Person EUR','Preis für 2 Erwachsene EUR','Flug enthalten','Quelle','Preis abgerufen','Angebotsart','Bordnächte','Zwischenaufenthalt Nächte','Preisgrundlage','Kreuzfahrt 1 pro Person EUR','Kreuzfahrt 2 pro Person EUR','Weitere Kosten / Grenzen','Teilstrecken','Reederei'];
