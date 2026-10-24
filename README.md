@@ -52,7 +52,7 @@ Die direkte Ausführung des Node-Skripts verändert zunächst nur die lokalen Da
 node scripts/build-pages.cjs
 ```
 
-Der Build kopiert ausschließlich die sieben Laufzeitdateien und `.nojekyll` nach `dist/`. Der Workflow veröffentlicht dieses Paket über GitHub Pages mit HTTPS. Lokale Sicherungen, Betriebsdateien und Skripte sind nicht im Webpaket. Das Repository selbst ist öffentlich. Jeder Push nach `main` prüft und veröffentlicht den aktuellen Stand erneut.
+Der Build übernimmt ausschließlich die sieben Laufzeitdateien und `.nojekyll` nach `dist/`. Im veröffentlichten HTML erhalten Skripte, Styles und Reisedaten automatisch eine Versionskennung aus ihrem Dateiinhalt. Dadurch lädt der Browser nach Änderungen die passenden neuen Dateien; auch wöchentliche Preisupdates erhalten bei veränderten Daten eine neue Adresse. Der Workflow veröffentlicht dieses Paket über GitHub Pages mit HTTPS. Lokale Sicherungen, Betriebsdateien und Skripte sind nicht im Webpaket. Das Repository selbst ist öffentlich. Jeder Push nach `main` prüft und veröffentlicht den aktuellen Stand erneut.
 
 ## Enthaltene Reisen
 
