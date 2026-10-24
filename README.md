@@ -4,11 +4,15 @@ Ein statisches Kreuzfahrt-Dashboard mit Suche, Kabinenpreisvergleich und Jahresk
 
 Die Reiseübersicht zeigt die Dauer in Nächten und Kalendertagen, einschließlich Start- und Endtag. Der sichtbare Dauerfilter grenzt die Ergebnisse ein. Unter „Sortieren nach“ stehen kürzeste und längste Reise zur Wahl; ein Klick auf die Spaltenüberschrift „Reisedauer“ wechselt die Richtung. Bei Kombinationen zählt die Gesamtdauer einschließlich Zwischenaufenthalt; die Bordnächte bleiben separat erkennbar.
 
+Unter „Ausland → Hamburg / Kiel“ stehen sieben erfasste ausländische Starthäfen mit Land, Schiff, genauen Reiseterminen und Dauer. Die zwölf Transitreisen lassen sich nach Hamburg oder Kiel und anschließend nach Starthafen eingrenzen. Die Auswahl berücksichtigt auch Reederei, Suchwörter, Monat und Dauer. Deutsche Starthäfen und Rundreisen ab Deutschland gehören nicht in diesen Bereich. Die Zuordnung wird aus Start- und Zielhafen ermittelt.
+
 **Öffentliche Seite:** [MEERZEIT 2027](https://tschenso.github.io/meerzeit-2027/) · [Jahreskalender](https://tschenso.github.io/meerzeit-2027/#kalender). Auch über mobile Daten erreichbar; der lokale Rechner muss dafür nicht laufen.
 
 ## Preise aktualisieren und Verlauf ansehen
 
-In den Reisedetails steht ein Preisdiagramm mit allen dokumentierten Preisständen. Zuerst die Kabinenart, dann Tarif und Anreise wählen. Die vollständige Angebotsgrundlage steht lesbar unter der Auswahl. Kabine, Tarif, Flugpaket, Belegung und Anbieter bleiben getrennt. Der Verlauf beginnt mit den tatsächlich vorhandenen Abrufen vom 23./24. Oktober 2026. Frühere Preise werden nicht nachträglich erfunden. Bei berechneten Kombinationen öffnen die Schaltflächen unter den Teilreisen deren Preisverläufe; eine wechselnde Zusammenstellung wird nicht als durchgehend gleiches Paket dargestellt.
+In den Reisedetails steht ein Preisdiagramm mit allen dokumentierten Preisständen. Zuerst die Kabinenart, dann Tarif und Anreise wählen. Die vollständige Angebotsgrundlage steht lesbar unter der Auswahl. Kabine, Tarif, Flugpaket, Belegung und Anbieter bleiben getrennt. Der Verlauf beginnt mit den tatsächlich vorhandenen Abrufen vom 23./24. Oktober 2026. Frühere Preise werden nicht nachträglich erfunden. Bei berechneten Kombinationen öffnen die Schaltflächen der Teilreisen deren Preisverläufe; eine wechselnde Zusammenstellung wird nicht als durchgehend gleiches Paket dargestellt.
+
+Die Schaltfläche „Preisverlauf ansehen“ in jeder Reisezeile öffnet das Diagramm direkt. Hat eine Angebotsreihe erst einen Preisstand, wird das oberhalb des Diagramms erläutert. Ohne Beobachtungen steht „Noch kein Preisverlauf“. Bei Kombinationen sind die beiden Teilreise-Verläufe im Dialog direkt zugänglich. Das Diagramm behält den Tastaturfokus unter der sichtbaren Kopfzeile; Schließen bleibt erreichbar.
 
 Mit Node.js 22 oder neuer:
 

@@ -114,6 +114,15 @@ for(const combo of combos){assert.equal(combo.nights,combo.cruiseNights+combo.st
 
 vm.runInNewContext(fs.readFileSync(path.join(__dirname,'mein-schiff.js'),'utf8'),context);
 const mein=context.window.MEINSCHIFF2027,all=[...trips,...mein.trips,...combos];
+const returnTrips=core.filterTrips([...fullData.trips,...mein.trips],{...core.defaults,scope:'incoming'}),origins=core.incomingOrigins(returnTrips);
+assert.equal(returnTrips.length,12);assert.equal(origins.length,7);assert.equal(origins.reduce((n,g)=>n+g.trips.length,0),12);
+assert.equal(returnTrips.filter(t=>core.portMatches(t.endPort,'Hamburg')).length,8);assert.equal(returnTrips.filter(t=>core.portMatches(t.endPort,'Kiel')).length,4);
+assert.equal(origins.find(g=>g.key==='las palmas').trips.length,2,'Abweichende Gran-Canaria-Bezeichnungen gehören zu einem Starthafen.');
+assert.equal(origins.find(g=>g.key==='porto').label,'Leixões (Porto)');assert.ok(origins.every(g=>g.country),'Alle derzeit erfassten Auslandsstarts brauchen ein Land.');
+assert.ok(core.scopeMatches({...returnTrips[0],scope:'other'},{scope:'incoming'}),'Start- und Zielhafen bestimmen die Transitreise.');
+for(const startPort of ['Hamburg','Kiel','Bremerhaven','Warnemünde'])assert.ok(!core.isIncomingTrip({...returnTrips[0],startPort,endPort:'Hamburg'}),'Ein deutscher Starthafen ist kein Auslandsstart.');
+assert.ok(!core.isIncomingTrip({...returnTrips[0],isCombination:true}));
+assert.equal(core.filterTrips(returnTrips,{...core.defaults,scope:'incoming',search:'Spanien Hamburg'}).length,5,'Land und Ankunftshafen müssen gemeinsam suchbar sein.');
 assert.equal(mein.trips.length,499);
 assert.equal(new Set(mein.trips.map(t=>t.ship)).size,9);
 assert.equal(new Set(all.map(t=>t.id)).size,all.length);

@@ -29,10 +29,15 @@
       <button type="button" data-scope="hamburg" aria-pressed="false"><span class="scope-icon" aria-hidden="true">↗</span><span><strong>Ab Hamburg</strong><small><span data-scope-count="hamburg">204</span> Reisevarianten</small></span><span class="scope-arrow" aria-hidden="true">→</span></button>
       <button type="button" data-scope="kiel" aria-pressed="false"><span class="scope-icon" aria-hidden="true">↗</span><span><strong>Ab Kiel</strong><small><span data-scope-count="kiel">168</span> Reisevarianten</small></span><span class="scope-arrow" aria-hidden="true">→</span></button>
       <button type="button" data-scope="roundtrip" aria-pressed="false"><span class="scope-icon" aria-hidden="true">↺</span><span><strong>Rundreisen & Kombis</strong><small><span data-scope-count="roundtrip">181</span> Rundreisen ab/bis Hamburg</small></span><span class="scope-arrow" aria-hidden="true">→</span></button>
-      <button type="button" data-scope="incoming" aria-pressed="false"><span class="scope-icon" aria-hidden="true">↙</span><span><strong>Zurück nach Deutschland</strong><small><span data-scope-count="incoming">12</span> nach Hamburg / Kiel</small></span><span class="scope-arrow" aria-hidden="true">→</span></button>
+      <button type="button" data-scope="incoming" aria-pressed="false"><span class="scope-icon" aria-hidden="true">↙</span><span><strong>Ausland → Hamburg / Kiel</strong><small><span data-scope-count="incoming">12</span> Transitreisen</small></span><span class="scope-arrow" aria-hidden="true">→</span></button>
       <button type="button" data-scope="atlantic" aria-pressed="false"><span class="scope-icon" aria-hidden="true">≈</span><span><strong>Transatlantik</strong><small><span data-scope-count="atlantic">29</span> Europa ↔ Amerika</small></span><span class="scope-arrow" aria-hidden="true">→</span></button>
     </nav>
     <div class="scope-context"><p id="scope-description">Alle erfassten Reisen mit Abreise im Jahr 2027.</p><a href="#results-title" class="text-button">Reisen ansehen ↓</a></div>
+    <section id="incoming-origins" class="incoming-origins" aria-labelledby="incoming-title" hidden>
+      <div class="incoming-heading"><div><h2 id="incoming-title">Starthäfen im Ausland</h2><p id="incoming-summary"></p><a class="incoming-results-link" href="#results-title">Direkt zu Preisen & Preisverläufen ↓</a></div><nav id="incoming-arrivals" aria-label="Ankunftshafen auswählen"></nav></div>
+      <div id="incoming-origin-cards" class="incoming-origin-cards"></div>
+      <p class="incoming-help">Ein Termin nennt die reine Kreuzfahrt von der Einschiffung bis zur Ausschiffung. Flugpakete sind bei den Preisen gesondert markiert. Preise und Preisverläufe stehen in der Reiseübersicht.</p>
+    </section>
     <nav id="roundtrip-nav" class="roundtrip-nav" aria-label="Art der Rundreise" hidden>
       <button type="button" data-roundtrip-type="featured" aria-pressed="true">Große Rundreisen <span>5</span></button>
       <button type="button" data-roundtrip-type="all" aria-pressed="false">Alle Rundreisen <span>160</span></button>
@@ -47,7 +52,7 @@
         <label>Welche Kabine?<select id="cabin"></select></label>
         <label>Reisedauer<select id="duration"><option value="">Beliebig</option><option value="short">Bis 7 Nächte</option><option value="medium">8–14 Nächte</option><option value="long">15–28 Nächte</option><option value="extended">Ab 29 Nächten</option></select></label>
       </div>
-      <p id="search-help" class="search-help">Suche nach Schiff, Route, Hafen oder Monat. Alle Suchwörter müssen passen.</p>
+      <p id="search-help" class="search-help">Suche nach Schiff, Route, Hafen, Land oder Monat. Alle Suchwörter müssen passen.</p>
       <div class="flight-choice"><label class="check"><input id="flights" type="checkbox" aria-describedby="flight-help"> Preise mit Flug einbeziehen</label><span id="flight-help">Flugpakete sind bei jedem Preis gekennzeichnet.</span></div>
       <div class="port-filters"><label>Starthafen<select id="startPort"><option value="">Alle Häfen</option></select></label><span class="port-arrow" aria-hidden="true">→</span><label>Zielhafen<select id="endPort"><option value="">Alle Häfen</option></select></label><div class="quick-choices"><span>Schnellauswahl</span><button type="button" data-quick="hamburg-round">Hamburg ↺ Hamburg</button><button type="button" data-quick="mein-schiff">Mein Schiff 2027</button><button type="button" data-quick="all">Alles anzeigen</button></div></div>
       <div class="filter-disclosures">
