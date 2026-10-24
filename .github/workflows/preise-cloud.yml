@@ -4,7 +4,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: meerzeit-pages
+  group: meerzeit-cloud-prices
   cancel-in-progress: false
 jobs:
   update:
@@ -15,5 +15,17 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '22'
-      - name: Preisquellen ohne Datenänderung prüfen
-        run: node scripts/preise-aktualisieren.cjs --dry-run --limit=1
+      - name: AIDA-Cloudquelle ohne Speicherung prüfen
+        run: node scripts/preise-aktualisieren.cjs --source=euresa --operator=aida --dry-run --limit=1
+      - name: EURESA-Mein-Schiff-Angebot ohne Speicherung prüfen
+        run: |
+          node - <<'NODE'
+          const p=require('./scripts/preise-aktualisieren.cjs');
+          (async()=>{
+            const trip={...p.readData('mein-schiff.js','MEINSCHIFF2027').trips.find(t=>t.id==='MS-2012349'),euresaCode:'MSA270102SEE'};
+            const r=await fetch('https://euresa-reisen.de/reisesuche/MSA270102SEE?priceView=pax',{signal:AbortSignal.timeout(30000),headers:{'User-Agent':'Meerzeit2027/1.0 (public cruise price comparison)','Accept-Language':'de-DE'}});
+            if(!r.ok)throw Error('HTTP '+r.status);
+            const offers=p.parseEuresa(await r.text(),trip);
+            console.log(JSON.stringify({operator:trip.operator,ship:trip.ship,start:trip.start,verifiedOffers:offers.length}));
+          })().catch(e=>{console.error(e.message);process.exitCode=1});
+          NODE

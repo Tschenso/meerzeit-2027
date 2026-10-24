@@ -34,6 +34,17 @@ const html=snapshot(info)+snapshot(meta)+'<img alt="Kabinenkategorie Innenkabine
 assert.equal(p.parseEuresa(html,euresaTrip)[0].flight,true);
 assert.throws(()=>p.parseEuresa(html,{...euresaTrip,start:'2027-02-01'}),/Reise oder Belegung/);
 assert.throws(()=>p.parseEuresa(html.replace('&quot;adults&quot;:2','&quot;adults&quot;:1'),euresaTrip),/Reise oder Belegung/);
+const msTrip={operator:'Mein Schiff',euresaCode:'MS-TEST',ship:'Mein Schiff 1',start:'2027-01-01',end:'2027-01-08',nights:7,startPort:'Kiel',endPort:'Kiel'};
+const msInfo={data:{...msTrip,cruiseCode:'MS-TEST',shipName:'Mein Schiff 1',shipXmlId:101,organizerId:2,duration:7,startPortName:'Kiel',endPortName:'Kiel',transportationType:0}};
+const msMeta={data:{...meta.data,cruiseCode:'MS-TEST',transportationType:0,flightPriceMandatory:false},memo:meta.memo};
+const msHtml=snapshot(msInfo)+snapshot(msMeta)+'<img alt="Kabinenkategorie Junior Suite Balkon"><a href="https://tuic.euresa-reisen.de/de/angebot?cruise_id=101-270101-7&amp;erw=2"><span>Mein Schiff PRO-Tarif</span><span class="text-lg font-bold">2.499 €</span></a>';
+const msOffer=p.parseEuresa(msHtml,msTrip)[0];assert.equal(msOffer.cabin,'Junior Suite Balkon');assert.equal(msOffer.tariff,'MEIN SCHIFF PRO');assert.equal(msOffer.flight,false);
+assert.equal(core.bestOffer({offers:[msOffer]},core.defaults,'Junior-Suite').price,2499,'Benannte Mein-Schiff-Tarife gehören in den Standardvergleich');
+assert.throws(()=>p.parseEuresa(msHtml,{...msTrip,endPort:'Hamburg'}),/Häfen oder Belegung/);
+assert.throws(()=>p.parseEuresa(msHtml.replace('101-270101-7','101-270102-7'),msTrip),/Buchungslink/);
+assert.throws(()=>p.parseEuresa(msHtml.replace('&quot;adults&quot;:2','&quot;adults&quot;:1'),msTrip),/Häfen oder Belegung/);
+const historicMs={offers:[{...msOffer,source:0}],sources:[{url:'https://example.org/alter-anbieter',checkedAt:'2026-10-23T12:00:00Z'},{url:'https://example.org/neuer-anbieter',checkedAt:'2026-10-24T12:00:00Z'}]};
+p.seed(historicMs);p.replaceSource(historicMs,1,[msOffer],'2026-10-24T12:00:00Z');assert.equal(historicMs.priceHistory.length,2,'Ein Anbieterwechsel beginnt eine eigene Preisreihe');
 let series=0,points=0;
 for(const [file,global] of [['data.js','AIDA2027'],['mein-schiff.js','MEINSCHIFF2027']]){
   const d=p.readData(file,global);

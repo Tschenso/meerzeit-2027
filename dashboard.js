@@ -7,7 +7,7 @@
   const operatorOf=trip=>trip.operator||'AIDA';
   const featured=trip=>FEATURED.has(trip.id)||(operatorOf(trip)==='Mein Schiff'&&trip.nights>=15);
   const priceNights=trip=>trip.cruiseNights||trip.nights;
-  const BASE = new Set(['PREMIUM', 'CLASSIC', 'LIGHT', 'PAUSCHAL', 'CHARTER', 'ANGEBOT']);
+  const BASE = new Set(['PREMIUM', 'CLASSIC', 'LIGHT', 'PAUSCHAL', 'CHARTER', 'ANGEBOT', 'MEIN SCHIFF PRO', 'MEIN SCHIFF PLUS', 'MEIN SCHIFF PUR']);
   const GROUPS = [
     ['inside', 'Innen'], ['outside', 'Meerblick'], ['balcony', 'Balkon / Veranda'],
     ['junior', 'Junior-Suite'], ['suites', 'Suite / Kategorie*']

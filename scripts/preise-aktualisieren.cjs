@@ -36,6 +36,7 @@ function failSource(trip,index,message,at,state='error'){
   // Fehler erzeugen weder neue Preisbeobachtungen noch einen Preis von 0 €.
 }
 function parseEuresa(html,trip){
+  if(trip.operator==='Mein Schiff')return parseMeinSchiffEuresa(html,trip);
   const snapshots=[...html.matchAll(/wire:snapshot="([^"]+)"/g)].map(m=>JSON.parse(text(m[1])));
   const info=snapshots.find(s=>s.data?.cruiseCode===trip.code&&s.data?.shipName)?.data;
   const data=snapshots.find(s=>s.memo?.name==='website.cruise-search.details-prices')?.data;
@@ -58,6 +59,30 @@ function parseEuresa(html,trip){
   }
   if(!offers.length)throw Error('Keine eindeutigen Kategoriepreise erkannt');
   if(new Set(offers.map(o=>[o.cabin,o.tariff,o.flight].join('|'))).size!==offers.length)throw Error('Mehrdeutige Kategoriepreise');
+  return offers;
+}
+function parseMeinSchiffEuresa(html,trip){
+  const snapshots=[...html.matchAll(/wire:snapshot="([^"]+)"/g)].map(m=>JSON.parse(text(m[1])));
+  const info=snapshots.find(s=>s.data?.cruiseCode===trip.euresaCode&&s.data?.shipName)?.data;
+  const data=snapshots.find(s=>s.memo?.name==='website.cruise-search.details-prices')?.data;
+  const {harborKey}=require('../dashboard.js');
+  if(!trip.euresaCode||!info||!data||info.start!==trip.start||info.end!==trip.end||info.shipName!==trip.ship||info.duration!==trip.nights||String(info.organizerId)!=='2'||data.cruiseCode!==trip.euresaCode||data.adults!==2||data.children!==0||data.juveniles!==0||data.priceView!=='pax'||harborKey(info.startPortName)!==harborKey(trip.startPort)||harborKey(info.endPortName)!==harborKey(trip.endPort))throw Error('Mein-Schiff-Reise, Häfen oder Belegung nicht eindeutig bestätigt');
+  if(![0,1].includes(data.transportationType)||info.transportationType!==data.transportationType||data.flightPriceMandatory&&data.transportationType!==1)throw Error('Mein-Schiff-Fluggrundlage nicht eindeutig');
+  const expected=[info.shipXmlId,trip.start.slice(2).replaceAll('-',''),trip.nights].join('-');
+  const categories=[...html.matchAll(/alt="Kabinenkategorie ([^"]+)"/g)],offers=[];
+  for(let i=0;i<categories.length;i++){
+    const cabin=text(categories[i][1]),block=html.slice(categories[i].index,categories[i+1]?.index||html.length);
+    for(const a of block.matchAll(/<a\b[^>]*href="(https:\/\/tuic\.euresa-reisen\.de\/de\/angebot\?[^" ]+)"[^>]*>([\s\S]*?)<\/a>/g)){
+      const url=new URL(text(a[1]));if(url.searchParams.get('cruise_id')!==expected||url.searchParams.get('erw')!=='2')throw Error('Mein-Schiff-Buchungslink passt nicht zur Reise');
+      const tariff=text(a[2]).match(/Mein Schiff (PRO|PLUS|PUR)-Tarif/)?.[1];
+      const value=a[2].match(/<span[^>]*class="[^"]*text-lg font-bold[^"]*"[^>]*>([\d.,\s]+€)<\/span>/)?.[1];
+      if(!tariff||!value)continue;
+      const price=euro(value);if(!(price>0))throw Error('Ungültiger Mein-Schiff-Kategoriepreis');
+      offers.push({cabin,tariff:'MEIN SCHIFF '+tariff,price,flight:data.transportationType===1,soldOut:false});
+    }
+  }
+  if(!offers.length)throw Error('Keine eindeutigen Mein-Schiff-Kategoriepreise erkannt');
+  if(new Set(offers.map(o=>[o.cabin,o.tariff,o.flight].join('|'))).size!==offers.length)throw Error('Mehrdeutige Mein-Schiff-Kategoriepreise');
   return offers;
 }
 const CABINS={Innen:'Innenkabine','Außen':'Meerblickkabine',Balkon:'Balkonkabine',Suite:'Suitenkategorie (Anbietergruppe)'};
@@ -100,8 +125,9 @@ async function get(url){
   if(!r.ok)throw Error('HTTP '+r.status);return {html:await r.text(),more:r.headers.get('x-has-more')};
 }
 async function main(args=process.argv.slice(2)){
-  if(args.includes('--help')){console.log('node scripts/preise-aktualisieren.cjs [--dry-run] [--operator=aida|mein-schiff] [--limit=N]\nOhne Optionen: alle vorhandenen Reisen aktualisieren. Kein Zeitplan.');return;}
-  if(args.some(a=>!/^--(?:dry-run|operator=(?:aida|mein-schiff)|limit=[1-9]\d*)$/.test(a)))throw Error('Unbekannte Option; --help zeigt die Verwendung.');
+  if(args.includes('--help')){console.log('node scripts/preise-aktualisieren.cjs [--dry-run] [--source=euresa] [--operator=aida|mein-schiff] [--limit=N]\nOhne Optionen: alle vorhandenen Reisen aktualisieren. Kein Zeitplan.');return;}
+  if(args.some(a=>!/^--(?:dry-run|source=euresa|operator=(?:aida|mein-schiff)|limit=[1-9]\d*)$/.test(a)))throw Error('Unbekannte Option; --help zeigt die Verwendung.');
+  const euresaOnly=args.includes('--source=euresa');
   const dry=args.includes('--dry-run'),operator=args.find(a=>a.startsWith('--operator='))?.split('=')[1],limit=+(args.find(a=>a.startsWith('--limit='))?.split('=')[1]||Infinity);
   const datasets=[['data.js','AIDA2027',readData('data.js','AIDA2027'),'aida'],['mein-schiff.js','MEINSCHIFF2027',readData('mein-schiff.js','MEINSCHIFF2027'),'mein-schiff']];
   for(const [,global,data,op] of datasets){
@@ -110,7 +136,7 @@ async function main(args=process.argv.slice(2)){
     const all=[...data.trips,...(data.supportingTrips||[])];all.forEach(seed);
     const at=new Date().toISOString(),report={attemptedAt:at,ok:0,errors:0,manual:0,skipped:0};let count=0;
     let annual=new Map(),annualError=null;
-    if(op==='mein-schiff'){
+    if(op==='mein-schiff'&&!euresaOnly&&all.some(t=>t.sources.some(s=>new URL(s.url).hostname==='www.mykreuzfahrt.de'&&s.updateStatus!=='archived'))){
       try{
         for(let page=1;page<=40;page++){
           const url=page===1?ANNUAL:'https://www.mykreuzfahrt.de/landingpage.php?'+new URLSearchParams({url:'/tui-cruises/mein-schiff-2027/',sort:'date',dir:'asc',seite:String(page),ajax:'1',append:'1'});
@@ -127,6 +153,8 @@ async function main(args=process.argv.slice(2)){
     for(const trip of all){
       for(let index=0;index<trip.sources.length;index++){
         const source=trip.sources[index],host=new URL(source.url).hostname;
+        if(source.updateStatus==='archived'){report.archived=(report.archived||0)+1;continue;}
+        if(euresaOnly&&host!=='euresa-reisen.de'){failSource(trip,index,'Kein automatischer Cloud-Abruf für diese Quelle; letzter bestätigter Stand bleibt historisch',at,'manual');report.manual++;continue;}
         if(count>=limit){report.skipped++;continue;}
         count++;
         try{
@@ -147,7 +175,7 @@ async function main(args=process.argv.slice(2)){
       if(count&&count%25===0)console.log(op+': '+report.ok+' Quellen aktualisiert');
     }
     data.lastUpdate=report;
-    if(!report.ok&&count>report.manual)throw Error(op+': Kein erfolgreicher Preisabruf; bestehende Dateien werden erhalten.');
+    if(!report.ok)throw Error(op+': Kein erfolgreicher Preisabruf; bestehende Dateien werden erhalten.');
     // generatedAt bleibt der Katalogstand; einzelne Quellen tragen den Preisabruf.
     console.log(JSON.stringify({operator:op,dryRun:dry,...report}));
   }
@@ -156,5 +184,5 @@ async function main(args=process.argv.slice(2)){
     for(const [file,global,data,op] of datasets){if(operator&&operator!==op)continue;const dest=path.join(ROOT,file),temp=dest+'.tmp';fs.writeFileSync(temp,'window.'+global+' = '+JSON.stringify(data)+';\n');fs.renameSync(temp,dest);}
   }
 }
-module.exports={text,euro,parseEuresa,parseAnnual,parseMykDetail,observe,seed,replaceSource,failSource,sourceKey,readData};
+module.exports={text,euro,parseEuresa,parseMeinSchiffEuresa,parseAnnual,parseMykDetail,observe,seed,replaceSource,failSource,sourceKey,readData};
 if(require.main===module)main().catch(error=>{console.error(error.message);process.exitCode=1;});

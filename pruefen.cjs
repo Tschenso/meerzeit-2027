@@ -126,13 +126,19 @@ for(const t of mein.trips){
   assert.equal(t.operator,'Mein Schiff');
   assert.ok(t.start.startsWith('2027-'));
   assert.equal((Date.parse(t.end)-Date.parse(t.start))/86400000,t.nights,t.id);
-  assert.ok(t.startPort&&t.endPort&&t.bookingUrl.startsWith('https://www.mykreuzfahrt.de/'));
-  for(const o of t.offers){assert.ok(o.price>0&&Number.isFinite(o.price));assert.ok(t.sources[o.source]);assert.equal(o.tariff,'ANGEBOT');assert.equal(typeof o.flight,'boolean');assert.notEqual(o.cabin,'Suite');assert.notEqual(o.cabin,'Junior-Suite');}
+  assert.ok(t.startPort&&t.endPort&&['www.mykreuzfahrt.de','euresa-reisen.de'].includes(new URL(t.bookingUrl).hostname));
+  for(const o of t.offers){
+    assert.ok(o.price>0&&Number.isFinite(o.price));assert.ok(t.sources[o.source]);assert.equal(typeof o.flight,'boolean');
+    if(new URL(t.sources[o.source].url).hostname!=='euresa-reisen.de'){
+      assert.equal(o.tariff,'ANGEBOT');assert.notEqual(o.cabin,'Suite');assert.notEqual(o.cabin,'Junior-Suite');
+    }else{assert.ok(['MEIN SCHIFF PRO','MEIN SCHIFF PLUS','MEIN SCHIFF PUR'].includes(o.tariff));assert.ok(t.euresaCode);}
+  }
   for(const s of t.sources){assert.ok(s.url.startsWith('https://'));assert.ok(Number.isFinite(Date.parse(s.checkedAt)));}
 }
 const flow=mein.trips.find(t=>t.id==='MS-2050406');
-assert.equal(core.bestOffer(flow,core.defaults,'Suite'),null);
-assert.equal(core.bestOffer(flow,core.defaults,'Junior-Suite'),null);
+const legacyFlow={...flow,offers:flow.offers.filter(o=>new URL(flow.sources[o.source].url).hostname==='www.mykreuzfahrt.de').map(o=>({...o,stale:false}))};
+assert.equal(core.bestOffer(legacyFlow,core.defaults,'Suite'),null);
+assert.equal(core.bestOffer(legacyFlow,core.defaults,'Junior-Suite'),null);
 assert.equal(core.groupOf('Suitenkategorie (Anbietergruppe)'),'suitegroup');
 const suiteGroupFixture={...flow,offers:[{cabin:'Suitenkategorie (Anbietergruppe)',tariff:'ANGEBOT',price:3000,flight:false}]};
 assert.ok(core.bestOffer(suiteGroupFixture,core.defaults,'@suitegroup'));
