@@ -208,5 +208,5 @@ async function main(args=process.argv.slice(2)){
     for(const [file,global,data,op] of datasets){if(operator&&operator!==op)continue;const dest=path.join(ROOT,file),temp=dest+'.tmp';fs.writeFileSync(temp,'window.'+global+' = '+JSON.stringify(data)+';\n');fs.renameSync(temp,dest);}
   }
 }
-module.exports={text,euro,parseEuresa,parseMeinSchiffEuresa,parseAnnual,parseMykDetail,observe,seed,replaceSource,failSource,sourceKey,readData};
+module.exports={text,euro,parseEuresa,parseMeinSchiffEuresa,parseAnnual,parseMykDetail,observe,seed,replaceSource,failSource,sourceKey,readData,main};
 if(require.main===module)main().catch(error=>{console.error(error.message);process.exitCode=1;});
