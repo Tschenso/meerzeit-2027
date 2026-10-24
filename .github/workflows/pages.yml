@@ -1,13 +1,8 @@
-name: Dashboard veröffentlichen und Preise aktualisieren
+name: Dashboard auf GitHub Pages veröffentlichen
 on:
   push:
     branches: [main]
   workflow_dispatch:
-    inputs:
-      preise_aktualisieren:
-        description: Aktuelle Preise abrufen und den Verlauf fortschreiben
-        type: boolean
-        default: true
 permissions:
   contents: read
 concurrency:
@@ -17,30 +12,17 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
       pages: read
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '22'
-      - name: Preise abrufen
-        if: github.event_name == 'workflow_dispatch' && inputs.preise_aktualisieren
-        run: node scripts/preise-aktualisieren.cjs
       - name: Daten und Preisverlauf prüfen
         run: |
           node pruefen.cjs
           node scripts/preise-pruefen.cjs
-      - name: Neue Preisstände versionieren
-        if: github.event_name == 'workflow_dispatch' && inputs.preise_aktualisieren
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add data.js mein-schiff.js
-          if ! git diff --cached --quiet; then
-            git commit -m 'Update cruise prices and price history'
-            git push origin HEAD:main
-          fi
       - name: Webpaket erstellen
         run: node scripts/build-pages.cjs
       - uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5

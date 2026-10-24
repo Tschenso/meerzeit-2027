@@ -22,11 +22,19 @@ Das Skript aktualisiert die **bereits erfassten Reisen**, einschließlich der zw
 
 Der Verlauf speichert pro Angebotsreihe einen Stand je UTC-Tag, zusätzlich jede beobachtete Preisänderung innerhalb des Tages. Ein weggefallener Kategoriepreis wird als Lücke erfasst. Ein Abruffehler erzeugt keinen neuen Preispunkt und setzt keinen Preis auf null. Der letzte bestätigte Abrufzeitpunkt bleibt erhalten; bisherige Angebote werden als alt markiert und vom aktuellen Vergleich ausgeschlossen. Charter- und zusätzliche offizielle Quellen ohne implementierten Parser benötigen eine manuelle Prüfung und behalten ihren dokumentierten Stand. Scheitern sämtliche unterstützten Abfragen einer bearbeiteten Reederei, bleiben beide Datendateien unverändert.
 
-### Aktualisieren direkt auf GitHub
+### Aktualisieren und veröffentlichen unter Windows
 
-Unter [Actions → Dashboard veröffentlichen und Preise aktualisieren](https://github.com/Tschenso/meerzeit-2027/actions/workflows/pages.yml) auf **Run workflow** klicken. Das aktivierte Feld „Aktuelle Preise abrufen und den Verlauf fortschreiben“ führt den Abruf aus, prüft die Daten, sichert die Preisstände als Git-Commit und veröffentlicht die Seite neu. Ohne dieses Feld wird nur der aktuelle Repository-Stand veröffentlicht. **Es ist kein automatischer Zeitplan eingerichtet.**
+Im ursprünglichen Git-Checkout mit Node.js 22+, Git und angemeldeter GitHub CLI:
 
-Die lokale Skriptausführung verändert zunächst nur die lokalen Datendateien. Für die öffentliche Seite die geprüften Änderungen committen und nach `main` pushen oder den GitHub-Workflow verwenden. Der Git-Verlauf erhält vorherige Datenstände.
+```powershell
+.\Aktualisieren-und-veroeffentlichen.ps1
+```
+
+Das Skript ruft die Preise lokal ab, prüft die Daten, sichert ausschließlich die beiden Datendateien als Git-Commit und pusht nach `main`. GitHub Actions prüft und veröffentlicht die Seite anschließend automatisch. Es übernimmt keine ungesicherten Änderungen und überschreibt keinen abweichenden GitHub-Stand. `-OhnePreisabruf` veröffentlicht einen bereits geprüften lokalen Stand ohne erneuten Preisabruf. **Es ist kein automatischer Zeitplan eingerichtet.**
+
+Der Preisabruf muss lokal erfolgen: Beim geprüften Lauf vom 24. Oktober 2026 blockiert mykreuzfahrt Anfragen von GitHub-Runnern mit HTTP 403. Diese Sperre wird nicht umgangen. GitHub Pages liefert die bereits veröffentlichten Daten unabhängig vom lokalen Rechner aus. Unter [Actions → Dashboard auf GitHub Pages veröffentlichen](https://github.com/Tschenso/meerzeit-2027/actions/workflows/pages.yml) kann **Run workflow** den Repository-Stand auch ohne neue Preisabfrage erneut veröffentlichen.
+
+Die direkte Ausführung des Node-Skripts verändert zunächst nur die lokalen Datendateien. Das Windows-Skript übernimmt zusätzlich Prüfung, Commit und Upload. Der Git-Verlauf erhält vorherige Datenstände. Schlägt der Abruf, ein Test oder der Upload fehl, meldet das Skript den Fehler; der letzte erfolgreich veröffentlichte Stand bleibt erreichbar.
 
 ### GitHub Pages bauen
 
