@@ -334,3 +334,24 @@ dialog::backdrop{background:#102d4277;backdrop-filter:blur(3px)}.dialog-top{disp
  .mini-calendar .calendar-date-button{min-height:44px}
 }
 @media(max-width:380px){.calendar-month-nav{grid-template-columns:repeat(4,minmax(0,1fr))}}
+/* Hamburg und Kiel sowie zwölf gut vergleichbare Monatskarten */
+.direction{grid-template-columns:repeat(6,minmax(0,1fr))}
+.calendar-counting{margin:0 0 18px}.calendar-counting>summary{display:flex;align-items:center;min-height:44px;font-size:.78rem;color:var(--muted);cursor:pointer}.calendar-counting .calendar-explainer{margin:0 0 12px}
+.calendar-month-overview{padding:20px;background:#f4f8f8;border:1px solid #e1ebea;border-radius:12px;margin:18px 0 26px}
+.month-overview-heading{display:flex;justify-content:space-between;align-items:baseline;gap:14px;margin-bottom:15px}.month-overview-heading h4{font-size:.95rem;font-weight:650}.month-overview-heading p{font-size:.72rem;line-height:1.6;color:var(--muted)}
+.calendar-month-nav{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin:0}
+.calendar-month-nav .calendar-month-card{position:relative;display:flex;flex-direction:column;align-items:stretch;gap:12px;text-align:left;min-width:0;min-height:122px;border-radius:10px;padding:13px 12px 17px;border:1px solid #d6e4e2;background:white;color:var(--ink);overflow:hidden;box-shadow:0 2px 5px #16334505}
+.month-card-name{display:flex;align-items:center;justify-content:space-between;gap:4px;font-size:.8rem;font-weight:650}.month-card-name small{font-size:.64rem;font-weight:400;color:#657b81}
+.month-card-count{display:flex;align-items:baseline;gap:6px}.month-card-count strong{font-size:1.45rem;line-height:1}.month-card-count>span{font-size:.66rem;color:var(--muted)}
+.month-card-price{display:block;min-height:18px;font-size:.72rem;color:#36616a;line-height:1.5}.month-card-meter{position:absolute;left:0;bottom:0;width:var(--month-fill);height:4px;background:#94c6bf}
+.calendar-month-nav .calendar-month-card:hover{border-color:#318790;background:#f4faf9}.calendar-month-nav .calendar-month-card[aria-pressed=true]{background:#173f4a;border-color:#173f4a;color:white;box-shadow:0 3px 9px #16334518}
+.calendar-month-card[aria-pressed=true] .month-card-price,.calendar-month-card[aria-pressed=true] .month-card-count>span,.calendar-month-card[aria-pressed=true] .month-card-name small{color:#d6eceb}.calendar-month-card.empty-month{box-shadow:none}
+.month-choice{display:flex;flex-direction:column;gap:7px;min-height:100px;padding:12px;border-radius:9px;background:white}.month-choice>strong{font-size:.8rem}.month-choice .month-count{float:none;font-size:1.15rem}.month-choice .month-count>span{font-size:.65rem;font-weight:400;color:var(--muted)}.month-choice small{font-size:.7rem;white-space:normal;line-height:1.5;margin:0}.month-choice[aria-pressed=true] .month-count>span{color:#dfebef}
+@media(max-width:1200px){.direction{grid-template-columns:repeat(3,minmax(0,1fr))}.calendar-month-nav{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:700px){
+ .direction{grid-template-columns:repeat(3,minmax(0,1fr))}.calendar-month-overview{padding:12px;margin:14px 0 20px}.month-overview-heading{display:block;margin-bottom:12px}.month-overview-heading h4{font-size:.88rem}.month-overview-heading p{margin-top:5px;font-size:.69rem}
+ .calendar-month-nav{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.calendar-month-nav .calendar-month-card{padding:11px 8px 14px;min-height:108px;gap:9px;border-radius:8px}
+ .month-card-name{font-size:.73rem}.month-card-name small{display:none}.month-card-count{gap:4px;flex-wrap:wrap}.month-card-count strong{font-size:1.25rem}.month-card-count>span{font-size:.62rem}.month-card-price{font-size:.66rem;min-height:16px}
+ .months{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.month-choice{min-height:96px;padding:10px}.month-choice>strong{font-size:.75rem}.month-choice .month-count{font-size:1.05rem}.month-choice small{font-size:.66rem}
+}
+@media(max-width:380px){.calendar-month-nav,.months{grid-template-columns:repeat(2,minmax(0,1fr))}}

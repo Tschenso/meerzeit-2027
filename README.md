@@ -46,12 +46,13 @@ Der Build kopiert ausschließlich die sieben Laufzeitdateien und `.nojekyll` nac
 
 ## Enthaltene Reisen
 
-- **690 veröffentlichte Reisevarianten**: 191 recherchierte AIDA-Angebote und 499 Mein-Schiff-Angebote auf neun Schiffen.
-- **531 Abfahrtstermine auf 17 Schiffen** nach Zusammenfassung gleicher Schiffe, Startdaten und Starthäfen.
+- **819 veröffentlichte Reisevarianten**: 320 recherchierte AIDA-Angebote und 499 Mein-Schiff-Angebote auf neun Schiffen.
+- **608 Abfahrtstermine auf 17 Schiffen** nach Zusammenfassung gleicher Schiffe, Startdaten und Starthäfen.
+- **Ab Kiel: 168 Reisevarianten und 110 Abfahrtstermine**, davon 132 AIDA- und 36 Mein-Schiff-Varianten. 153 Varianten enden wieder in Kiel.
 - 181 erfasste Rundreisevarianten ab/bis Hamburg und fünf berechnete AIDA-Reisekombinationen.
 - 29 einfache Atlantiküberquerungen sowie vier Atlantik-Rundreisen und eine Weltreise im Zusatzfilter.
 
-Die AIDA-Auswahl umfasst die recherchierten Hamburg-, Rück- und Atlantikreisen. Die Mein-Schiff-Auswahl umfasst die zum Abrufzeitpunkt in der Jahresquelle gelisteten Reisen weltweit. Die Themenbereiche überschneiden sich; eine vollständige und tagesaktuelle Abdeckung der Reedereikataloge ist nicht zugesichert.
+Die AIDA-Auswahl umfasst die recherchierten Hamburg-, Kiel-, Rück- und Atlantikreisen. Die 132 Kiel-Varianten wurden am 24. Oktober 2026 mit der AIDA-Jahresliste von mykreuzfahrt abgeglichen; die 129 ergänzten Reisen sind mit Reisedaten und Kabinenpreisen bei EURESA bestätigt. Die Mein-Schiff-Auswahl umfasst die zum Abrufzeitpunkt in der Jahresquelle gelisteten Reisen weltweit. Die Themenbereiche überschneiden sich; eine vollständige und tagesaktuelle Abdeckung der Reedereikataloge ist nicht zugesichert.
 
 Alle regulär auswählbaren Reisen beginnen 2027. Das Ende kann 2028 liegen. Zwei zusätzliche Abfahrten 2028 dienen ausschließlich als Teilreisen der berechneten Kombinationen.
 
@@ -68,6 +69,7 @@ Direktansichten:
 | Alle erfassten Reisen | `index.html#alle` |
 | Mein Schiff | `index.html#mein-schiff` |
 | Ab Hamburg | `index.html#hamburg` |
+| Ab Kiel | `index.html#kiel` |
 | Rundreisen ab/bis Hamburg | `index.html#rundreisen-alle` |
 | Große Rundreisen | `index.html#rundreisen` |
 | Berechnete Kombinationen | `index.html#kombinationen` |
@@ -87,7 +89,7 @@ Bezeichnungen desselben Hafens, etwa Palma/Palma de Mallorca und Gran Canaria/La
 
 Schiffsnamen und Starthäfen stehen direkt beim Datum. Mehrere Abfahrten werden vollständig untereinander angezeigt. Ein Tagesklick ist zum Lesen der Namen nicht erforderlich.
 
-Auf großen Bildschirmen erscheinen beschriftete Monatsraster. Auf kleinen Bildschirmen zeigt der ausgewählte Monat lesbare Tageszeilen. Die Monatsnavigation ermöglicht den direkten Wechsel. Die Suche und alle Reisefilter gelten auch im Kalender.
+Zwölf Monatskarten zeigen die Anzahl der Abfahrtstermine und den günstigsten erfassten Preis zur gewählten Kabine und Preisbasis. Sie ermöglichen den direkten Monatswechsel. Auf großen Bildschirmen erscheinen beschriftete Monatsraster. Auf kleinen Bildschirmen zeigt der ausgewählte Monat lesbare Tageszeilen. Die Suche und alle Reisefilter gelten auch im Kalender.
 
 Reisevarianten desselben Schiffs mit gleichem Startdatum und Starthafen zählen als ein Termin. Die Varianten und ihre unterschiedlichen Dauern bleiben einzeln aufrufbar. Leere Tage bedeuten, dass im gefilterten Datenbestand kein Termin erfasst ist. Abfahrtsuhrzeiten sind nicht enthalten.
 
@@ -107,6 +109,7 @@ Hauptquellen:
 
 - [EURESA Reisen](https://euresa-reisen.de/reisesuche)
 - [mykreuzfahrt: Mein Schiff 2027](https://www.mykreuzfahrt.de/tui-cruises/mein-schiff-2027/)
+- [mykreuzfahrt: AIDA 2027](https://www.mykreuzfahrt.de/aida/aida-2027/)
 - [Mein Schiff: Reisen ab Hamburg](https://www.meinschiff.com/de/kreuzfahrten/ab-hamburg)
 - Die in den einzelnen Reiseangeboten verlinkten Veranstalter und Vermittler.
 

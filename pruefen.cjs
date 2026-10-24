@@ -6,13 +6,15 @@ const vm = require('node:vm');
 const core = require('./dashboard.js');
 const context = {window:{}};
 vm.runInNewContext(fs.readFileSync(path.join(__dirname,'data.js'),'utf8'),context);
-const data = context.window.AIDA2027;
+const fullData = context.window.AIDA2027;
+// Bestehende Hamburg-/Transit-Regressionen bleiben gegen ihren ursprünglichen Katalog abgegrenzt.
+const data = {...fullData,trips:fullData.trips.filter(t=>t.inventoryTag!=='kiel-2027')};
 const trips = data.trips;
 assert.equal(data.people,2);
 assert.equal(trips.filter(t=>t.scope==='hamburg').length,173,'Die zuvor zusammengestellte Hamburg-Liste muss vollständig bleiben.');
 assert.equal(trips.filter(t=>t.scope==='incoming').length,6,'Die sechs recherchierten Auslands-Transitreisen fehlen.');
 assert.equal(new Set(trips.map(t=>t.id)).size,trips.length,'Doppelte Reise-IDs.');
-for(const t of trips){
+for(const t of fullData.trips){
   assert.ok(t.start.startsWith('2027-'));
   assert.equal((Date.parse(t.end)-Date.parse(t.start))/86400000,t.nights,t.id+': Datum und Nächte stimmen nicht überein.');
   assert.ok(t.startPort&&t.endPort&&t.sources.length,t.id+': Häfen oder Quellen fehlen.');
@@ -158,6 +160,25 @@ assert.ok(core.filterTrips(all,{...core.defaults,operator:'Mein Schiff',budget:'
 
 const calendar=require('./kalender.js');
 const calendarHelpers={operatorOf:core.operatorOf,harborKey:core.harborKey};
+const allCatalog=[...fullData.trips,...mein.trips],kielTrips=core.filterTrips(allCatalog,{...core.defaults,scope:'kiel'});
+assert.equal(fullData.trips.length,320);
+assert.equal(allCatalog.length,819);
+assert.equal(kielTrips.length,168);
+assert.equal(new Set(allCatalog.map(t=>t.id)).size,allCatalog.length,'Kiel-Ergänzungen dürfen keine Reisen doppelt erfassen.');
+assert.equal(core.filterTrips(kielTrips,{...core.defaults,scope:'kiel',operator:'AIDA'}).length,132);
+assert.equal(core.filterTrips(kielTrips,{...core.defaults,scope:'kiel',operator:'Mein Schiff'}).length,36);
+assert.ok(kielTrips.every(t=>core.portMatches(t.startPort,'Kiel')));
+assert.equal(fullData.kielInventory.sourceCount,132);
+assert.equal(fullData.kielInventory.tripIds.length,132,'Alle Kiel-Reisevarianten der geprüften Quelle müssen zugeordnet sein.');
+assert.ok(fullData.kielInventory.tripIds.every(id=>kielTrips.some(t=>t.id===id)));
+const fullDepartures=calendar.buildDepartures(allCatalog,2027,calendarHelpers),kielDepartures=calendar.buildDepartures(kielTrips,2027,calendarHelpers);
+assert.equal(fullDepartures.length,608);
+assert.equal(kielDepartures.length,110);
+assert.ok(kielDepartures.every(d=>core.portMatches(d.startPort,'Kiel')));
+assert.equal(kielTrips.filter(t=>core.portMatches(t.endPort,'Kiel')).length,153);
+const addedKiel=fullData.trips.filter(t=>t.inventoryTag==='kiel-2027');
+assert.equal(addedKiel.length,129);
+assert.ok(addedKiel.every(t=>t.code===t.id&&t.sources[0].url.includes('euresa-reisen.de')&&t.priceHistory.length));
 const departureTrips=[...trips,...mein.trips],departures=calendar.buildDepartures(departureTrips,2027,calendarHelpers);
 assert.equal(departures.length,531,'Reisevarianten dürfen keine mehrfachen Abfahrtstermine erzeugen.');
 assert.equal(departures.reduce((sum,d)=>sum+d.trips.length,0),690);
@@ -191,6 +212,15 @@ calendarUI.render(departureTrips,core.defaults);
 assert.equal((renderRoot.innerHTML.match(/class="calendar-event /g)||[]).length,531,'Alle Abfahrtstermine müssen direkt beschriftet sein.');
 assert.ok(renderRoot.innerHTML.includes('<strong>AIDAnova</strong><span>ab Hamburg</span>'));
 assert.ok(renderRoot.innerHTML.includes('<strong>Mein Schiff Relax</strong><span>ab Santa Cruz</span>'));
+calendarUI.render(allCatalog,core.defaults);
+assert.equal((renderRoot.innerHTML.match(/class="calendar-event /g)||[]).length,608);
+assert.equal((renderRoot.innerHTML.match(/class="calendar-month-card/g)||[]).length,12,'Die Monatsübersicht muss alle zwölf Monate enthalten.');
+const monthCounts=[...renderRoot.innerHTML.matchAll(/class="month-card-count"><strong>(\d+)<\/strong>/g)].map(m=>Number(m[1]));
+assert.equal(monthCounts.reduce((sum,n)=>sum+n,0),608,'Monatskarten zählen Abfahrtstermine statt Reisevarianten.');
+calendarUI.render(kielTrips,{...core.defaults,scope:'kiel'});
+assert.equal((renderRoot.innerHTML.match(/class="calendar-event /g)||[]).length,110);
+assert.ok(renderRoot.innerHTML.includes('<strong>AIDAnova</strong><span>ab Kiel</span>'));
+assert.ok(renderRoot.innerHTML.includes('<strong>Mein Schiff 1</strong><span>ab Kiel</span>'));
 const tuiHamburg=core.filterTrips(departureTrips,{...core.defaults,operator:'Mein Schiff',startPort:'Hamburg',endPort:'Hamburg'});
 calendarUI.render(tuiHamburg,{...core.defaults,operator:'Mein Schiff',startPort:'Hamburg',endPort:'Hamburg'});
 assert.equal((renderRoot.innerHTML.match(/class="calendar-event /g)||[]).length,21);
@@ -212,5 +242,5 @@ async function checkLocalServer(){
   }finally{await new Promise(resolve=>server.close(resolve));}
 }
 
-const missing=trips.filter(t=>!t.offers.some(o=>!o.soldOut&&!o.onRequest));
-checkLocalServer().then(()=>{console.log(JSON.stringify({status:'OK',reisenGesamt:trips.length+mein.trips.length,aida:trips.length,meinSchiff:mein.trips.length,meinSchiffSchiffe:9,rundreisenHamburg:181,kombinationen:combos.length,teilreisen2028:data.supportingTrips.length,preisbelege:all.reduce((n,t)=>n+t.offers.length,0)+data.supportingTrips.reduce((n,t)=>n+t.offers.length,0),ohneAktuellenAidaPreis:missing.map(t=>t.id)},null,2));}).catch(error=>{console.error(error);process.exitCode=1;});
+const missing=fullData.trips.filter(t=>!t.offers.some(o=>!o.soldOut&&!o.onRequest));
+checkLocalServer().then(()=>{console.log(JSON.stringify({status:'OK',reisenGesamt:allCatalog.length,aida:fullData.trips.length,meinSchiff:mein.trips.length,abfahrtstermine:fullDepartures.length,kielReisen:kielTrips.length,kielAbfahrten:kielDepartures.length,meinSchiffSchiffe:9,rundreisenHamburg:181,kombinationen:combos.length,teilreisen2028:data.supportingTrips.length,preisbelege:allCatalog.reduce((n,t)=>n+t.offers.length,0)+data.supportingTrips.reduce((n,t)=>n+t.offers.length,0),ohneAktuellenAidaPreis:missing.map(t=>t.id)},null,2));}).catch(error=>{console.error(error);process.exitCode=1;});

@@ -72,6 +72,7 @@
   }
   function scopeMatches(trip,state) {
     if(state.scope==='all')return !trip.isCombination;
+    if(state.scope==='kiel')return !trip.isCombination&&portMatches(trip.startPort,'Kiel');
     if(state.scope==='roundtrip'){
       const type=state.roundtripType||'featured';
       if(type==='combined')return !!trip.isCombination;
@@ -153,7 +154,7 @@
     document.getElementById('coverage').textContent = 'Die Reisedaten konnten nicht geladen werden. Bitte index.html zusammen mit den übrigen Dateien im Ordner öffnen.';
     return;
   }
-  const initialScope = ({'#alle':'all','#mein-schiff':'all','#transatlantik':'atlantic','#rueckreisen':'incoming','#hamburg':'hamburg','#rundreisen':'roundtrip','#rundreisen-alle':'roundtrip','#kombinationen':'roundtrip'})[window.location.hash] || 'all';
+  const initialScope = ({'#alle':'all','#mein-schiff':'all','#transatlantik':'atlantic','#rueckreisen':'incoming','#hamburg':'hamburg','#kiel':'kiel','#rundreisen':'roundtrip','#rundreisen-alle':'roundtrip','#kombinationen':'roundtrip'})[window.location.hash] || 'all';
   const trips = [...DATA.trips,...CombinationCore.buildCombinations(DATA)], state = {...defaults,scope:initialScope,operator:window.location.hash==='#mein-schiff'?'Mein Schiff':'',roundtripType:window.location.hash==='#kombinationen'?'combined':window.location.hash==='#rundreisen-alle'?'all':'featured',flights:['incoming','atlantic'].includes(initialScope)}, pageSize = 20;
   const $ = id => document.getElementById(id);
   const escape = value => String(value ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -177,11 +178,12 @@
   const calendar=CalendarCore.create({root:$('calendar-panel'),year:2027,operatorOf,harborKey,harborLabel,bestOffer,displayPrice,priceNights,money,date,escape,tariffName,
     cabinLabel:selection=>cabinOptions.find(([value])=>value===selection)?.[1]||selection,
     openTrip:showDetail,onMonthChange:month=>{state.month=month;state.page=1;render();},onReset:reset});
-  const scopeNames = {all:'Alle erfassten Reisen 2027',hamburg:'Ab Hamburg',incoming:'Ausland → Hamburg / Kiel',atlantic:'Transatlantik',roundtrip:'Rundreisen ab/bis Hamburg'};
+  const scopeNames = {all:'Alle erfassten Reisen 2027',hamburg:'Ab Hamburg',kiel:'Ab Kiel',incoming:'Ausland → Hamburg / Kiel',atlantic:'Transatlantik',roundtrip:'Rundreisen ab/bis Hamburg'};
   const scopeDescriptions = {
     all:DATA.trips.length+' erfasste Reisen von AIDA & Mein Schiff. Abreise 2027; das Ende kann in 2028 liegen.',
     roundtrip:'Hamburg ist Start und Ziel. Alle erfassten Rundreisen, große Fernrundreisen oder fünf berechnete AIDA-Kombinationen wählen. Das Reiseende kann 2028 liegen.',
     hamburg:'Alle erfassten Reisen mit Einschiffung in Hamburg im Kalenderjahr 2027.',
+    kiel:'Reisen von AIDA & Mein Schiff mit Start in Kiel im Jahr 2027. Für Rundreisen auch Kiel als Zielhafen wählen.',
     incoming:'Im Ausland einsteigen und in Hamburg oder Kiel ankommen. Start jeweils im Jahr 2027.',
     atlantic:'Europa ↔ Amerika: erfasste Überfahrten von AIDA und Mein Schiff mit Start 2027. Reisen nach Afrika zählen nicht als Transatlantik. Rund- und Weltreisen findest du unter „Weitere Filter“.'
   };
@@ -257,14 +259,14 @@
   }
   function renderMonths() {
     const rows = filterTrips(trips,state,true);
-    const months = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+    const months = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
     const counts = months.map((_,i)=>rows.filter(t=>Number(t.start.slice(5,7)) === i+1).length);
     const max = Math.max(1,...counts);
     $('months').innerHTML = months.map((label,i)=> {
       const offers = rows.filter(t=>Number(t.start.slice(5,7))===i+1).map(t=>({t,o:bestOffer(t,state)})).filter(x=>x.o);
-      const values = offers.map(x=>displayPrice(x.o.price,priceNights(x.t),state.display));
-      const min = values.length ? Math.min(...values) : null;
-      return `<button type="button" class="month" data-month="${i+1}" aria-pressed="${Number(state.month)===i+1}" aria-label="${label} 2027: ${counts[i]} Reiseangebote${min === null ? '' : ', ab ' + money(min)}" style="--fill:${Math.round(counts[i]/max*100)}%"><strong>${label}</strong><span class="month-count">${counts[i]}</span><small>${min === null ? 'kein Preis' : 'ab '+money(min)}</small></button>`;
+      const cheapest = offers.map(x=>({...x,value:displayPrice(x.o.price,priceNights(x.t),state.display)})).sort((a,b)=>a.value-b.value)[0];
+      const quote = cheapest ? 'ab '+money(cheapest.value)+(cheapest.o.flight?' · inkl. Flug':'') : 'Kein Kabinenpreis';
+      return `<button type="button" class="month month-choice" data-month="${i+1}" aria-pressed="${Number(state.month)===i+1}" aria-label="${label} 2027: ${counts[i]} Reiseangebote, ${quote}" style="--fill:${Math.round(counts[i]/max*100)}%"><strong>${label}</strong><span class="month-count">${counts[i]} <span>Reisen</span></span><small>${quote}</small></button>`;
     }).join('');
   }
   function priceCell(trip, group, label) {
@@ -317,7 +319,7 @@
     const cabin=state.cabin,display=state.display,operator=state.operator;
     Object.assign(state,defaults,{scope,cabin,display,operator,flights:['incoming','atlantic'].includes(scope)});
     syncControls();render();
-    try {history.replaceState(null,'',({all:'#alle',hamburg:'#hamburg',incoming:'#rueckreisen',atlantic:'#transatlantik',roundtrip:'#rundreisen'})[scope]);} catch {}
+    try {history.replaceState(null,'',({all:'#alle',hamburg:'#hamburg',kiel:'#kiel',incoming:'#rueckreisen',atlantic:'#transatlantik',roundtrip:'#rundreisen'})[scope]);} catch {}
   }
   function showCombinationDetail(t){
     const rows=combinationPriceRows(t,state);
@@ -403,7 +405,7 @@
   }
   document.querySelector('.view-switch').addEventListener('click',event=>{
     const button=event.target.closest('[data-view]');if(!button)return;currentView=button.dataset.view;renderRows();
-    try{history.replaceState(null,'',currentView==='calendar'?'#kalender':({all:'#alle',hamburg:'#hamburg',incoming:'#rueckreisen',atlantic:'#transatlantik',roundtrip:state.roundtripType==='combined'?'#kombinationen':state.roundtripType==='all'?'#rundreisen-alle':'#rundreisen'})[state.scope]);}catch{}
+    try{history.replaceState(null,'',currentView==='calendar'?'#kalender':({all:'#alle',hamburg:'#hamburg',kiel:'#kiel',incoming:'#rueckreisen',atlantic:'#transatlantik',roundtrip:state.roundtripType==='combined'?'#kombinationen':state.roundtripType==='all'?'#rundreisen-alle':'#rundreisen'})[state.scope]);}catch{}
     $('results-title').scrollIntoView({block:'start'});$('results-title').focus({preventScroll:true});
   });
   $('ship-nav').addEventListener('click',event=>{const b=event.target.closest('[data-ship]');if(!b)return;state.ship=b.dataset.ship;state.route='';state.page=1;render();});
