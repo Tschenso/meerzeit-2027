@@ -4,6 +4,8 @@
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const ROOT=path.resolve(__dirname,'..');
 const ANNUAL='https://www.mykreuzfahrt.de/tui-cruises/mein-schiff-2027/';
+const EURESA_PAUSE_MS=1250;
+class SourceAccessError extends Error {}
 const text=s=>String(s||'').replace(/<[^>]*>/g,' ').replace(/&(#x[\da-f]+|#\d+|quot|amp|nbsp|ndash|middot|apos|#039);/gi,(_,e)=>({quot:'"',amp:'&',nbsp:' ',ndash:'–',middot:'·',apos:"'"}[e]||(e.startsWith('#x')?String.fromCodePoint(parseInt(e.slice(2),16)):String.fromCodePoint(+e.slice(1))))).replace(/\s+/g,' ').trim();
 const euro=s=>{const t=text(s);return /^\d[\d. ]*(?:,\d{2})?\s*€$/.test(t)?Number(t.replace(/[. €]/g,'').replace(',','.')):null;};
 function readData(file,global){const c={window:{}};vm.runInNewContext(fs.readFileSync(path.join(ROOT,file),'utf8'),c,{timeout:3000});return JSON.parse(JSON.stringify(c.window[global]));}
@@ -35,12 +37,20 @@ function failSource(trip,index,message,at,state='error'){
   for(const o of trip.offers.filter(o=>o.source===index))o.stale=true;
   // Fehler erzeugen weder neue Preisbeobachtungen noch einen Preis von 0 €.
 }
+function checkCoverage(operator,report){
+  const attempted=report.ok+report.errors;
+  if(!report.ok||report.errors>attempted/10){
+    throw Error(`${operator}: ${report.ok}/${attempted} Quellen bestätigt (mindestens 90 % erforderlich). Beide Datendateien bleiben unverändert.`);
+  }
+}
 function parseEuresa(html,trip){
   if(trip.operator==='Mein Schiff')return parseMeinSchiffEuresa(html,trip);
   const snapshots=[...html.matchAll(/wire:snapshot="([^"]+)"/g)].map(m=>JSON.parse(text(m[1])));
   const info=snapshots.find(s=>s.data?.cruiseCode===trip.code&&s.data?.shipName)?.data;
   const data=snapshots.find(s=>s.memo?.name==='website.cruise-search.details-prices')?.data;
-  if(!info||!data||info.start!==trip.start||info.end!==trip.end||info.shipName!==trip.ship||data.cruiseCode!==trip.code||data.adults!==2||data.children!==0||data.juveniles!==0||data.priceView!=='pax')throw Error('Reise oder Belegung nicht eindeutig bestätigt');
+  if(!info||!data||data.cruiseCode!==trip.code)throw Error('Reise oder Belegung nicht eindeutig bestätigt: Buchungsdaten fehlen oder Reisecode weicht ab');
+  if(info.start!==trip.start||info.end!==trip.end||info.shipName!==trip.ship)throw Error(`Reise oder Belegung nicht eindeutig bestätigt: Anbieter meldet ${info.shipName}, ${info.start} bis ${info.end}`);
+  if(data.adults!==2||data.children!==0||data.juveniles!==0||data.priceView!=='pax')throw Error('Reise oder Belegung nicht eindeutig bestätigt: Preisbasis ist nicht pro Person bei zwei Erwachsenen');
   if(![0,1].includes(data.transportationType))throw Error('Unbekannte Transportart');
   if(data.flightPriceMandatory&&data.transportationType!==1)throw Error('Flugpflicht und Preisart widersprechen sich');
   const categories=[...html.matchAll(/alt="Kabinenkategorie ([^"]+)"/g)];
@@ -151,7 +161,14 @@ function parseMykDetail(html,trip){
 }
 async function get(url){
   const r=await fetch(url,{signal:AbortSignal.timeout(30000),headers:{'User-Agent':'Meerzeit2027/1.0 (public cruise price comparison)','Accept-Language':'de-DE'}});
-  if(!r.ok)throw Error('HTTP '+r.status);return {html:await r.text(),more:r.headers.get('x-has-more')};
+  const euresa=new URL(url).hostname==='euresa-reisen.de';
+  if(euresa&&[403,429].includes(r.status))throw new SourceAccessError(`EURESA: HTTP ${r.status}. Preisabruf abgebrochen.`);
+  if(!r.ok)throw Error('HTTP '+r.status);
+  const html=await r.text();
+  if(euresa&&/<title>\s*Reisesuche wird geladen\s*\|\s*EURESAreisen\s*<\/title>/i.test(html)){
+    throw new SourceAccessError('EURESA verlangt eine Browserprüfung. Preisabruf abgebrochen.');
+  }
+  return {html,more:r.headers.get('x-has-more')};
 }
 async function main(args=process.argv.slice(2)){
   if(args.includes('--help')){console.log('node scripts/preise-aktualisieren.cjs [--dry-run] [--source=euresa|cloud] [--pending-only] [--operator=aida|mein-schiff] [--limit=N]\nOhne Optionen: alle vorhandenen Reisen aktualisieren. Kein Zeitplan.');return;}
@@ -200,10 +217,10 @@ async function main(args=process.argv.slice(2)){
           trip.note='Aktuelle EURESA-Kabinenpreise mit benanntem Mein-Schiff-PRO-, PLUS- oder PUR-Tarif. Erforderliche Flugpakete sind gekennzeichnet. Frühere mykreuzfahrt-Angebote bleiben mit ihrer eigenen Kabinen-, Tarif- und Quellenzuordnung im Verlauf erhalten; die frühere Anbietergruppe Suite kann Junior-Suiten enthalten.';
           delete trip.euresaCandidate;
         }catch(error){
-          if(/HTTP (403|429)/.test(error.message))throw error;
+          if(error instanceof SourceAccessError)throw error;
           candidate.updateError=error.message;candidate.attemptedAt=at;report.errors++;console.error(trip.id+': '+error.message);
         }
-        await new Promise(resolve=>setTimeout(resolve,200));
+        await new Promise(resolve=>setTimeout(resolve,EURESA_PAUSE_MS));
       }
       for(let index=0;index<trip.sources.length;index++){
         if(index===newlyConfirmed)continue;
@@ -226,8 +243,8 @@ async function main(args=process.argv.slice(2)){
           else if(host==='www.mykreuzfahrt.de')offers=parseMykDetail((await get(source.url)).html,trip);
           else{failSource(trip,index,'Manuelle Prüfung beim Veranstalter erforderlich',at,'manual');report.manual++;continue;}
           replaceSource(trip,index,offers,new Date().toISOString());report.ok++;
-        }catch(error){if(host==='euresa-reisen.de'&&/HTTP (403|429)/.test(error.message))throw error;failSource(trip,index,error.message,at);report.errors++;console.error(trip.id+': '+error.message);}
-        if(host==='euresa-reisen.de'||(op==='aida'&&host==='www.mykreuzfahrt.de'))await new Promise(resolve=>setTimeout(resolve,200));
+        }catch(error){if(error instanceof SourceAccessError)throw error;failSource(trip,index,error.message,at);report.errors++;console.error(trip.id+': '+error.message);}
+        if(host==='euresa-reisen.de'||(op==='aida'&&host==='www.mykreuzfahrt.de'))await new Promise(resolve=>setTimeout(resolve,host==='euresa-reisen.de'?EURESA_PAUSE_MS:200));
       }
       if(count&&count%25===0)console.log(op+': '+report.ok+' Quellen aktualisiert');
     }
@@ -235,7 +252,7 @@ async function main(args=process.argv.slice(2)){
       data.euresaInventory.confirmedCount=catalogue.filter(t=>t.euresaCode&&t.sources.some(s=>new URL(s.url).hostname==='euresa-reisen.de'&&s.updateStatus==='ok')).length;
       data.euresaInventory.unmatched=data.euresaInventory.unmatched.filter(u=>!catalogue.find(t=>t.id===u.id)?.euresaCode);
     }
-    if(!report.ok)throw Error(op+': Kein erfolgreicher Preisabruf; bestehende Dateien werden erhalten.');
+    checkCoverage(op,report);
     if(euresaOnly)for(const trip of catalogue){
       if(!trip.sources.some(s=>new URL(s.url).hostname==='euresa-reisen.de'&&s.updateStatus==='ok'))continue;
       for(const source of trip.sources.filter(s=>new URL(s.url).hostname==='www.mykreuzfahrt.de'&&s.updateStatus!=='archived')){

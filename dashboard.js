@@ -190,6 +190,13 @@
   $('cabin').innerHTML = cabinOptions.map(([v,l])=>`<option value="${escape(v)}">${escape(l)}</option>`).join('');
   $('cabin').value = state.cabin;
   $('price-date').textContent = 'Preisabruf AIDA: '+stamp(AIDA.lastUpdate?.attemptedAt||AIDA.generatedAt)+' · Mein Schiff: '+stamp(MEIN.lastUpdate?.attemptedAt||MEIN.generatedAt)+' Uhr';
+  const oldestRefresh=Math.min(...[AIDA,MEIN].map(data=>Date.parse(data.lastUpdate?.attemptedAt||data.generatedAt)));
+  if(Date.now()-oldestRefresh>9*86400000){
+    const notice=document.createElement('p');
+    notice.className='price-age-notice';
+    notice.textContent='Das wöchentliche Preisupdate ist überfällig. Die Beträge und die angezeigte Verfügbarkeit stammen aus den oben genannten Abrufen. Aktuelle Preise und Routen stehen beim Anbieter.';
+    document.querySelector('.intro').after(notice);
+  }
   const updates=[['AIDA',AIDA.lastUpdate],['Mein Schiff',MEIN.lastUpdate]].filter(([,r])=>r);
   if(updates.length){
     const notice=document.createElement('details');notice.className='update-notice';
@@ -198,7 +205,7 @@
     const issues=coverage.length===2?coverage.reduce((sum,r)=>sum+r.sourcesError+r.sourcesManual,0):updates.reduce((sum,[,r])=>sum+r.errors+r.manual+(r.skipped||0),0);
     const covered=coverage.reduce((sum,r)=>sum+r.confirmed,0),total=coverage.reduce((sum,r)=>sum+r.trips,0),prices=coverage.reduce((sum,r)=>sum+r.withPrices,0),unavailable=coverage.reduce((sum,r)=>sum+r.unavailable,0);
     notice.innerHTML=`<summary><strong>${coverage.length===2?covered+' von '+total+' Reisen automatisch geprüft':checked+' Quellen aktualisiert'}</strong><span>${issues?issues+' Quellenhinweise':'Alle Abfragen bestätigt'} <span aria-hidden="true">⌄</span></span></summary>${coverage.length===2?`<p>${prices} Reisen mit aktuellen buchbaren Kabinenpreisen · ${unavailable} beim geprüften Anbieter derzeit nicht buchbar oder ausgebucht. Die übrigen Reisen benötigen eine manuelle Preisprüfung.</p>`:''}<p>${escape(updates.map(([name,r])=>`${name}: ${r.partial?'letzter Nachabruf der offenen Quellen, ':''}${r.ok} Quellen geprüft${r.errors?', '+r.errors+' Abruffehler':''}${r.manual?', '+r.manual+' manuell zu prüfen':''}${r.skipped?', '+r.skipped+' nicht abgefragt':''}`).join(' · '))}. Unbestätigte alte Preise stehen nur in den Details und im Verlauf. Wöchentlich montags automatisch in der Cloud.</p>`;
-    document.querySelector('.intro').after(notice);
+    (document.querySelector('.price-age-notice')||document.querySelector('.intro')).after(notice);
   }
   let filtered = [],currentView=window.location.hash==='#kalender'?'calendar':'list';
   const calendar=CalendarCore.create({root:$('calendar-panel'),year:2027,operatorOf,harborKey,harborLabel,bestOffer,displayPrice,priceNights,money,date,escape,tariffName,

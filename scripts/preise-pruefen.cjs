@@ -75,18 +75,32 @@ assert.equal(inventory.parseInventory(listing).pages,50,'Die aktuell gewählte l
 assert.deepEqual(inventory.parseInventory(listing).rows[0],{code:'MSCODE',ship:'Mein Schiff 1',nights:7,start:'2027-01-01',end:'2027-01-08'});
 assert.throws(()=>inventory.parseInventory(listing.replace('bis 08.01.2027','bis unbekannt')),/Unvollständige/);
 // Ein vollständiger Quellenblock darf auch nach erfolgreichen AIDA-Abfragen nichts überschreiben.
-const blockedCloudTest=()=>{
+const blockedCloudTest=(mode='blocked')=>{
   const p=require('./scripts/preise-aktualisieren.cjs');
   const t=p.readData('data.js','AIDA2027').trips.find(t=>t.sources.some(s=>new URL(s.url).hostname==='euresa-reisen.de'));
   const snapshot=x=>'wire:snapshot="'+JSON.stringify(x).replaceAll('"','&quot;')+'"';
   const html=snapshot({data:{cruiseCode:t.code,shipName:t.ship,start:t.start,end:t.end}})+snapshot({memo:{name:'website.cruise-search.details-prices'},data:{cruiseCode:t.code,adults:2,juveniles:0,children:0,priceView:'pax',transportationType:0,flightPriceMandatory:false}})+'<img alt="Kabinenkategorie Innenkabine"><a href="https://aida.euresa-reisen.de/'+t.code+'/IND/1"><span>AIDA PREMIUM</span><span class="text-lg font-bold">999 €</span></a>';
-  global.fetch=async url=>String(url).includes('/'+t.code+'?')?new Response(html):new Response('Gesperrt',{status:403});
-  p.main(['--source=euresa','--limit=1']).catch(error=>{console.error(error.message);process.exitCode=1;});
+  let requests=0;
+  global.fetch=async url=>{
+    requests++;
+    if(mode==='challenge'){
+      if(requests>1)throw Error('Nach Browserprüfung darf keine weitere Anfrage erfolgen');
+      return new Response('<title>Reisesuche wird geladen | EURESAreisen</title>');
+    }
+    if(String(url).includes('/'+t.code+'?'))return new Response(html);
+    return mode==='partial'?new Response('<p>Preisdaten fehlen</p>'):new Response('Gesperrt',{status:403});
+  };
+  p.main(['--source=euresa',mode==='blocked'?'--limit=1':'--limit=2']).catch(error=>{console.error(error.message);process.exitCode=1;});
 };
 const dataFiles=['data.js','mein-schiff.js'].map(f=>require('node:path').resolve(__dirname,'..',f)),beforeFiles=dataFiles.map(f=>fs.readFileSync(f));
 const blocked=require('node:child_process').spawnSync(process.execPath,['-e','('+blockedCloudTest.toString()+')()'],{cwd:require('node:path').resolve(__dirname,'..'),encoding:'utf8',timeout:10000});
 assert.equal(blocked.status,1);assert.ok(blocked.stderr.includes('HTTP 403'));
 dataFiles.forEach((f,i)=>assert.ok(fs.readFileSync(f).equals(beforeFiles[i]),'Ein vollständiger Cloud-Fehler darf keine Datendatei überschreiben'));
+for(const [mode,expected] of [['partial',/1\/2 Quellen bestätigt/],['challenge',/^EURESA verlangt eine Browserprüfung\. Preisabruf abgebrochen\.\s*$/]]){
+  const run=require('node:child_process').spawnSync(process.execPath,['-e','('+blockedCloudTest.toString()+')('+JSON.stringify(mode)+')'],{cwd:require('node:path').resolve(__dirname,'..'),encoding:'utf8',timeout:10000});
+  assert.equal(run.status,1);assert.match(run.stderr,expected);
+  dataFiles.forEach((f,i)=>assert.ok(fs.readFileSync(f).equals(beforeFiles[i]),'Ein fehlerhafter Abruf darf keinen Datenstand überschreiben'));
+}
 let series=0,points=0;
 for(const [file,global] of [['data.js','AIDA2027'],['mein-schiff.js','MEINSCHIFF2027']]){
   const d=p.readData(file,global);

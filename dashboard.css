@@ -293,6 +293,7 @@ dialog::backdrop{background:#102d4277;backdrop-filter:blur(3px)}.dialog-top{disp
 }
 :root{--history-line:#066b72}
 .update-notice{padding:12px 16px;background:#fff7e7;border:1px solid #ead7b3;border-radius:12px;color:#5f4a24;font-size:.82rem;line-height:1.6;margin:0 0 22px}
+.price-age-notice{padding:12px 16px;background:var(--warn-bg);border-left:3px solid #ad7a2e;border-radius:7px;color:#624417;font-size:.83rem;line-height:1.6;margin:0 0 12px}
 .price-history{border:1px solid #cadddc;border-radius:18px;background:#f5faf9;padding:22px;margin:20px 0 26px;overflow:hidden}
 .history-heading{display:flex;justify-content:space-between;gap:16px;align-items:center;margin-bottom:20px}
 .history-heading h3{font-size:1.3rem;margin:5px 0}.history-heading .eyebrow{margin:0;font-size:.65rem}
